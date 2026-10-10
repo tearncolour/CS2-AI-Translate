@@ -4,6 +4,12 @@
 	<DisplayName Value="AI Translate! - Mods and Assets in Your Language" />
 	<ShortDescription Value="Translates mod settings, tool panels, asset names and descriptions into your game language with AI. Translated once, saved for good. Mostly tested in Chinese." />
 	<LongDescription>
+**Dependency: I18N Everywhere** (installed automatically when you subscribe). If the mod page still says "This mod is missing dependencies" after it's installed, you can ignore it. That warning is a display bug in the game's Paradox Mods page and doesn't affect anything: as long as "Required mods" shows I18N Everywhere as added, AI Translate! works normally.
+
+**依赖：I18N Everywhere**（订阅时会自动安装）。装好后如果 mod 页面仍提示「此 Mod 缺少依赖项目」，可以忽略。这是游戏内 Paradox Mods 页面的显示问题，不影响使用：只要「需要 MOD」里 I18n Everywhere 显示已添加，AI Translate! 就能正常工作。
+
+---
+
 **Your mods, in your language.**
 
 AI Translate! finds every bit of mod text that isn't in your game language yet: settings pages, tool panels, tooltips, asset names and descriptions. It translates them with DeepSeek or any other OpenAI-compatible API. Each line is translated once, saved, and shows up in the game right away.
@@ -45,7 +51,6 @@ You pay your API provider directly; the mod is free. Most mods have a few dozen 
 
 **If something's not right**
 
-- "This mod is missing dependencies" on the mod page, even though I18N Everywhere is listed as added right below it? That warning is a display bug in the in-game Paradox Mods page: it appears on any subscribed mod that declares a dependency, whether or not the dependency is installed. Restarting won't clear it. If the "Required mods" list shows I18N Everywhere as added, everything is fine and you can ignore the warning.
 - Still seeing untranslated text? Make sure "Load Language Packs" is on in I18N Everywhere's settings (the Advanced tab tells you if it isn't). Some mods also have their own language option and ignore translations while it's set to English; "Mod language follows the game" switches those for you.
 - Playing in English and translating mods written in other languages? Turn on "Enable overwrite" in I18N Everywhere.
 - Don't like a translation? Select the mod and click "Review", or edit the files in ModsData/AITranslateLocalization and click "Reload translations". Delete a mod's file to have it translated again.
@@ -104,7 +109,6 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 
 **遇到问题**
 
-- mod 页面提示「此 Mod 缺少依赖项目」，但下面的「需要 MOD」里 I18n Everywhere 明明显示「已添加」：这是游戏内 Paradox Mods 页面自己的显示问题，只要订阅了声明过依赖的 mod 就会出现，跟依赖装没装无关，重启也不会消失。只要「需要 MOD」里显示已添加，就一切正常，可以忽略这个提示。
 - 还有英文：看看 I18N Everywhere 设置里的「Load Language Packs」开没开（没开的话「高级」页会提示）。有些 mod 自带语言选项，选 English 时不显示译文，「mod 语言跟随游戏」会帮你改过来。
 - 用英文玩，想把其他语言写的 mod 翻成英文：在 I18N Everywhere 里打开「Enable overwrite」。
 - 某句翻得不满意：选中那个 mod 点「AI 审校」，或者直接改 ModsData/AITranslateLocalization 里的文件，再点「重新加载译文」。删掉某个 mod 的文件，它就会重新翻译。
