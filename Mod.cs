@@ -40,12 +40,20 @@ namespace AITranslate
             Setting.RegisterInOptionsUI();
             AssetDatabase.global.LoadSettings(Name, Setting, new Setting(this));
             MigrateLegacySettings(Setting);
+            if (Setting.ModelName == Setting.kLegacyDefaultModel)
+            {
+                // 还是旧的默认模型（玩家没自己改过）：换成新的默认值。
+                Setting.ModelName = Setting.kDefaultModel;
+                Setting.ApplyAndSave();
+            }
             Log.Info($"Settings loaded: api={Setting.ApiUrl}, model={Setting.ModelName}, key={(string.IsNullOrEmpty(Setting.ApiKey) ? "<empty>" : "set")}");
 
-            // 只内置英文与简体中文界面；其他语言（含繁体中文）由本 mod 自己翻译成游戏当前语言。
+            // 设置页预置游戏自带的全部语言；其他语言由本 mod 在填好 API Key 后自己翻译。
             var localization = GameManager.instance.localizationManager;
-            localization.AddSource("en-US", new LocaleEN(Setting));
-            localization.AddSource("zh-HANS", new LocaleZH(Setting));
+            foreach (string locale in LocaleTable.BundledLocales)
+            {
+                localization.AddSource(locale, new LocaleSource(Setting, locale));
+            }
 
             Service = new TranslationService(Setting);
             Service.PrepareStorage();

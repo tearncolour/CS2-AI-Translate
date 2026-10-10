@@ -37,7 +37,10 @@ namespace AITranslate
 
         public const string kNoneMod = "";
         public const string kDefaultApiUrl = "https://api.deepseek.com";
-        public const string kDefaultModel = "deepseek-chat";
+        public const string kDefaultModel = "deepseek-flash";
+
+        /// <summary>以前的默认模型名；读设置时仍是它的（没自己改过），换成新的默认值。</summary>
+        public const string kLegacyDefaultModel = "deepseek-chat";
 
         public Setting(IMod mod) : base(mod)
         {
