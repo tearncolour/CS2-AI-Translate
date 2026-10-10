@@ -56,6 +56,8 @@ Only mod UI text and its localization keys are sent, and only to the API address
 
 Works best with I18N Everywhere (set as a dependency). Without it, translations are written straight into the game's dictionary.
 
+Issues and pull requests are welcome. Source code (GPL-3.0): https://github.com/tearncolour/CS2-AI-Translate
+
 — MeroT
 
 ---
@@ -112,6 +114,8 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 
 推荐搭配 I18N Everywhere（已设为依赖）。不装也能用，译文会直接写进游戏词典。
 
+欢迎提 Issue 和 PR。源代码（GPL-3.0）：https://github.com/tearncolour/CS2-AI-Translate
+
 —— MeroT
 	</LongDescription>
 	<Thumbnail Value="Properties/Thumbnail.png" />
@@ -127,4 +131,5 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 	<ChangeLog Value="Fix mixed text: leftover mod names, [tags] and file paths no longer count as untranslated English; rewrites are kept only if they actually remove English, and earlier rewrites that only reworded a sentence are rolled back. Anything already checked is never sent again. The mod no longer rewrites its own interface. Scanning no longer causes a short hitch when it finishes. / 修正混杂：mod 名、[标签]、文件路径不再算作漏翻的英文；只保留真正减少了英文的改写，之前只是换说法的改写会自动撤回；检查过的不再重复发送；不再改写本 mod 自己的界面。检测结束时不再短暂卡顿。" />
 	<!--Public / Private / Unlisted-->
 	<AccessLevel Value="Public" />
+	<ExternalLink Type="github" Url="https://github.com/tearncolour/CS2-AI-Translate" />
 </Publish>
