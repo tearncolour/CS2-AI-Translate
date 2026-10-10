@@ -100,6 +100,21 @@ internal static class Program
             < QualityChecker.LeftoverEnglish("Unlock roads in every Playset", "解锁所有 Playset 中的道路", "zh-HANS", null, "Road Builder [BETA]"), "mixed: real fix improves");
         Check(QualityChecker.LeftoverEnglish("Mediterranean Heritage Residential", "Mediterranean Heritage中密度住宅", "zh-HANS") > 0, "mixed: classic case still caught");
 
+        // 界面文字跟随游戏语言：已经写进日志、概况的文字，切换语言后按新语言重新显示
+        {
+            string lang = "en";
+            LocText.Resolver = (n, a) => lang == "en" ? "Done " + a[0] : "完成 " + a[0];
+            ActivityLog.Clear();
+            ActivityLog.Info(LocText.Of("Done", 3));
+            string before = ActivityLog.Render(false, "", null);
+            lang = "zh";
+            LocText.Invalidate();
+            string after = ActivityLog.Render(false, "", null);
+            Check(before.EndsWith("Done 3") && after.EndsWith("完成 3"), "log follows language: " + after);
+            Check(LocText.Concat(LocText.Of("Done", 1), LocText.Literal("!")).ToString() == "完成 1!", "loc text concat");
+            ActivityLog.Clear();
+        }
+
         // 设置页标题：译名 (原名)
         Check(ModScanner.ComposeModTitle("推土机增强", "Better Bulldozer") == "推土机增强 (Better Bulldozer)", "mod title compose");
         Check(ModScanner.ComposeModTitle("移动工具（Move It）", "Move It") == "移动工具 (Move It)", "mod title strips echoed original: " + ModScanner.ComposeModTitle("移动工具（Move It）", "Move It"));

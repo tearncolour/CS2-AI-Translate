@@ -93,13 +93,21 @@ namespace AITranslate.Core
         private string m_JobLanguage;
         private Stopwatch m_JobWatch;
 
-        public string ApiStatusText { get; private set; } = string.Empty;
+        // 留在界面上的状态文字都存成 LocText，显示时才格式化：切换游戏语言后跟着变。
+        private LocText m_ApiStatus = LocText.Empty;
+        private List<LocText> m_Overview = new List<LocText> { LocText.Of("Waiting") };
+        private LocText m_Progress = LocText.Empty;
+        private LocText m_Environment = LocText.Empty;
 
-        public string OverviewText { get; private set; }
+        public string ApiStatusText => m_ApiStatus.ToString();
 
-        public string ProgressText { get; private set; } = string.Empty;
+        public string OverviewText => string.Join("\n", m_Overview.Select(t => t.ToString()));
 
-        private string m_LastSummary;
+        public string ProgressText => m_Progress.ToString();
+
+        public string EnvironmentText => m_Environment.ToString();
+
+        private LocText m_LastSummary;
 
         private string m_LastScanSummary;
 
@@ -109,7 +117,6 @@ namespace AITranslate.Core
         // 只有确定没有 I18N Everywhere 后才直接写游戏词典。
         private bool m_AllowDirectInjection;
 
-        public string EnvironmentText { get; private set; } = string.Empty;
 
         public bool IsBusy => m_Busy || m_Scanning;
 
@@ -134,10 +141,14 @@ namespace AITranslate.Core
         public TranslationService(Setting setting)
         {
             m_Setting = setting;
-            OverviewText = L("Waiting");
+            LocText.Resolver = L;
+            m_Overview = new List<LocText> { T("Waiting") };
         }
 
         private static LocalizationManager Localization => GameManager.instance?.localizationManager;
+
+        /// <summary>延迟格式化的界面文字：显示时才按当前游戏语言取词，切换语言后跟着变（见 LocText）。</summary>
+        private static LocText T(string name, params object[] args) => LocText.Of(name, args);
 
         /// <summary>
         /// 取界面文字。经由游戏词典查询，因此 I18N Everywhere（以及本 mod 自己翻译的界面译文）都会生效；
@@ -210,6 +221,18 @@ namespace AITranslate.Core
         public void Start()
         {
             m_WatchUpdater = MainThreadDispatcher.RegisterUpdater((Func<bool>)Watch);
+            var lm = Localization;
+            if (lm != null)
+            {
+                lm.onActiveDictionaryChanged += OnActiveDictionaryChanged;
+            }
+        }
+
+        /// <summary>游戏语言变了（或词典重新加载，比如本 mod 的界面译文刚写进去）：已经显示的状态文字和日志按新语言重新格式化。</summary>
+        private void OnActiveDictionaryChanged()
+        {
+            LocText.Invalidate();
+            BumpUi();
         }
 
         /// <summary>
@@ -246,7 +269,7 @@ namespace AITranslate.Core
                         // 切换了游戏语言：新语言也要按设置自动翻译一次。
                         m_AutoTranslatePending = true;
                         Mod.Log.Info($"Game language changed: {m_SignatureLocale} → {locale}");
-                        ActivityLog.Info(L("LogLanguageChanged", LanguageDisplayName(locale)));
+                        ActivityLog.Info(T("LogLanguageChanged", LanguageDisplayName(locale)));
                     }
                     m_SignatureLocale = locale;
                     m_Signature = signature;
@@ -282,12 +305,36 @@ namespace AITranslate.Core
                 {
                     RunAutoQueue();
                 }
+                else if (!m_RescanPending && stable >= kSettleSeconds && m_Scan != null && !IsBusy)
+                {
+                    TranslateOwnUiIfNeeded();
+                }
             }
             catch (Exception ex)
             {
                 Mod.Log.Warn("Watcher error: " + ex.Message);
             }
             return false;
+        }
+
+        // 已为哪些语言自动翻译过本 mod 自己的界面（每种语言每次运行只试一次，失败不反复请求）。
+        private readonly HashSet<string> m_OwnUiAttempted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 本 mod 的设置页只内置英文和简体中文；其他语言（繁体中文、日语、德语…）在填好 API Key 后自动把设置页翻译成游戏语言，
+        /// 切换语言后同样自动跟进。只有两百来条，花费很少，不受「自动翻译」开关限制。
+        /// </summary>
+        private void TranslateOwnUiIfNeeded()
+        {
+            string locale = m_Scan.Locale;
+            if (string.IsNullOrWhiteSpace(m_Setting.ApiKey) || m_OwnUiAttempted.Contains(locale)
+                || !m_Scan.Mods.TryGetValue(ModScanner.kSelfKey, out var self) || self.Pending.Count == 0)
+            {
+                return;
+            }
+            m_OwnUiAttempted.Add(locale);
+            Mod.Log.Info($"Translating own settings page into {locale}: {self.Pending.Count} entries");
+            TranslateMods(new[] { ModScanner.kSelfKey }, force: false);
         }
 
         private string ComputeSignature()
@@ -321,7 +368,7 @@ namespace AITranslate.Core
                 m_I18N.EnsureLanguagePackRegistered(TranslationStore.kPackFolderName, Store.LocalizationDir);
                 m_I18NConfigured = true;
                 Mod.Log.Info("I18N Everywhere detected, version " + m_I18N.Version);
-                ActivityLog.Info(L("LogI18NDetected", m_I18N.Version));
+                ActivityLog.Info(T("LogI18NDetected", m_I18N.Version));
                 m_LiveLocale = null; // 从降级模式切换到 I18N 模式
             }
         }
@@ -342,7 +389,7 @@ namespace AITranslate.Core
         private void FetchPlaysetThenScan()
         {
             m_Scanning = true;
-            ProgressText = L("Scanning");
+            m_Progress = T("Scanning");
             BumpUi();
 
             Task<HashSet<Colossal.PSI.Common.Mod>> task = null;
@@ -411,7 +458,7 @@ namespace AITranslate.Core
             }
             m_ScanRunning = true;
             m_Scanning = true;
-            ProgressText = L("Scanning");
+            m_Progress = T("Scanning");
             BumpUi();
             try
             {
@@ -512,7 +559,7 @@ namespace AITranslate.Core
                 m_Scanning = false;
                 if (!m_Busy)
                 {
-                    ProgressText = m_LastSummary != null ? L("LastJob", m_LastSummary) : string.Empty;
+                    m_Progress = m_LastSummary != null ? T("LastJob", m_LastSummary) : LocText.Empty;
                 }
                 BumpUi();
             }
@@ -539,7 +586,7 @@ namespace AITranslate.Core
             if (scanSummary != m_LastScanSummary)
             {
                 m_LastScanSummary = scanSummary;
-                ActivityLog.Info(scanSummary);
+                ActivityLog.Info(T("LogScan", scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation), scan.Mods.Values.Where(m => m.State == ModState.NeedsTranslation).Sum(m => m.Pending.Count), scan.MissingDescriptions));
             }
 
             var en = scan.GlossaryEnglish;
@@ -607,7 +654,7 @@ namespace AITranslate.Core
             foreach (var c in changes)
             {
                 Mod.Log.Info("Switched mod language option to follow the game: " + c);
-                ActivityLog.Info(L("LogLanguageOption", ResolveModName(c.Assembly) ?? c.ModName));
+                ActivityLog.Info(T("LogLanguageOption", ResolveModName(c.Assembly) ?? c.ModName));
             }
             RefreshGameUI();
         }
@@ -932,54 +979,54 @@ namespace AITranslate.Core
             int pending = need.Sum(m => m.Pending.Count);
 
             // 每项一行，显示在整行多行文本里。
-            var lines = new List<string> { L("StatusTarget", LanguageDisplayName(m_Scan.Locale)) };
+            var lines = new List<LocText> { T("StatusTarget", LanguageDisplayName(m_Scan.Locale)) };
             lines.Add(need.Count > 0
-                ? L("StatusMods", need.Count, pending)
-                : L("StatusModsDone", withText.Count));
+                ? T("StatusMods", need.Count, pending)
+                : T("StatusModsDone", withText.Count));
             int suspicious = m_Quality.Values.Sum(q => q.Suspicious);
             if (suspicious > 0)
             {
-                lines.Add(L("StatusQuality", suspicious));
+                lines.Add(T("StatusQuality", suspicious));
             }
             int mixed = m_Scan.Mods.Values.Sum(m => m.MixedNative.Count);
             if (mixed > 0)
             {
-                lines.Add(L("StatusMixed", mixed));
+                lines.Add(T("StatusMixed", mixed));
             }
             if (m_Scan.MissingDescriptions > 0)
             {
                 int missingNames = m_Scan.Mods.Values.Sum(m => m.MissingNames);
-                lines.Add(missingNames > 0 ? L("StatusDescriptionsNames", m_Scan.MissingDescriptions, missingNames) : L("StatusDescriptions", m_Scan.MissingDescriptions));
+                lines.Add(missingNames > 0 ? T("StatusDescriptionsNames", m_Scan.MissingDescriptions, missingNames) : T("StatusDescriptions", m_Scan.MissingDescriptions));
             }
             if (string.IsNullOrWhiteSpace(m_Setting.ApiKey))
             {
-                lines.Insert(0, L("StatusNoKey"));   // 最要紧的放最前面
+                lines.Insert(0, T("StatusNoKey"));   // 最要紧的放最前面
             }
-            OverviewText = string.Join("\n", lines);
+            m_Overview = lines;
         }
 
         private void UpdateEnvironmentText()
         {
-            string text;
+            LocText text;
             if (!UseI18N)
             {
-                text = L("NoI18N");
+                text = T("NoI18N");
             }
             else if (!m_I18N.CanLoadLanguagePacks)
             {
-                text = L("PacksDisabled", m_I18N.Version);
+                text = T("PacksDisabled", m_I18N.Version);
             }
             else
             {
-                text = L("PackRegistered", m_I18N.Version);
+                text = T("PackRegistered", m_I18N.Version);
             }
             var lm = Localization;
             if (UseI18N && lm != null && string.Equals(lm.activeLocaleId, lm.fallbackLocaleId, StringComparison.OrdinalIgnoreCase) && !m_I18N.Overwrite)
             {
-                text += L("OverwriteOff");
+                text = LocText.Concat(text, T("OverwriteOff"));
             }
-            text += L("Folder", Store.RootDir.Replace('/', '\\'));
-            EnvironmentText = text;
+            text = LocText.Concat(text, T("Folder", Store.RootDir.Replace('/', '\\')));
+            m_Environment = text;
             BumpUi();
         }
 
@@ -1285,7 +1332,7 @@ namespace AITranslate.Core
                 }
                 else if (!fromStartup)
                 {
-                    ProgressText = L("NothingToTranslate");
+                    m_Progress = T("NothingToTranslate");
                     BumpUi();
                 }
                 return;
@@ -1349,7 +1396,7 @@ namespace AITranslate.Core
                 var listed = newMods.Where(IsListed).ToList();
                 if (listed.Count > 0)
                 {
-                    ActivityLog.Info(L("LogNewMods", listed.Count, string.Join("、", listed.Take(5).Select(m => m.DisplayName)) + (listed.Count > 5 ? " …" : string.Empty)));
+                    ActivityLog.Info(T("LogNewMods", listed.Count, string.Join("、", listed.Take(5).Select(m => m.DisplayName)) + (listed.Count > 5 ? " …" : string.Empty)));
                 }
             }
             if (!m_Setting.AutoTranslateNewMods)
@@ -1386,7 +1433,7 @@ namespace AITranslate.Core
                 if (!m_MissingKeyLogged)
                 {
                     m_MissingKeyLogged = true;
-                    ActivityLog.Warning(L("LogAutoNeedsKey"));
+                    ActivityLog.Warning(T("LogAutoNeedsKey"));
                 }
                 return;
             }
@@ -1395,7 +1442,7 @@ namespace AITranslate.Core
                 m_AutoAttempted.Add(k);
             }
             var names = keys.Select(k => m_Scan.Mods[k].DisplayName).ToList();
-            ActivityLog.Info(L("LogAutoStart", names.Count, string.Join("、", names.Take(5)) + (names.Count > 5 ? " …" : string.Empty)));
+            ActivityLog.Info(T("LogAutoStart", names.Count, string.Join("、", names.Take(5)) + (names.Count > 5 ? " …" : string.Empty)));
             Notify(L("NotifyAutoStart", names.Count), ProgressState.Progressing, 0, pop: false);
 
             var toTranslate = keys.Where(k => m_Scan.Mods[k].Pending.Count > 0).ToList();
@@ -1433,7 +1480,7 @@ namespace AITranslate.Core
             }
             if (work.Count == 0)
             {
-                ProgressText = L("SelectionUpToDate");
+                m_Progress = T("SelectionUpToDate");
                 BumpUi();
                 return;
             }
@@ -1492,7 +1539,7 @@ namespace AITranslate.Core
             }
             if (work.Count == 0)
             {
-                ProgressText = L("NothingToReview");
+                m_Progress = T("NothingToReview");
                 BumpUi();
                 return;
             }
@@ -1507,7 +1554,7 @@ namespace AITranslate.Core
             }
             if (string.IsNullOrWhiteSpace(m_Setting.ApiKey))
             {
-                ProgressText = L("NeedApiKey");
+                m_Progress = T("NeedApiKey");
                 BumpUi();
                 return false;
             }
@@ -1544,8 +1591,7 @@ namespace AITranslate.Core
             m_JobWatch = Stopwatch.StartNew();
             UpdateProgressText();
             Mod.Log.Info($"Start {kind} job: {work.Count} mod(s), {m_JobTotal} entries → {locale} via {client.Endpoint} ({client.Model}), review={reviewAfter || kind == JobKind.Review}");
-            ActivityLog.RetryFormat = L("LogRetry");
-            ActivityLog.Info(L(kind == JobKind.FixMixed ? "LogStartFix" : kind == JobKind.Review ? "LogStartReview" : kind == JobKind.Describe ? "LogStartDescribe" : "LogStartTranslate", work.Count, m_JobTotal, m_JobLanguage, client.Model));
+            ActivityLog.Info(T(kind == JobKind.FixMixed ? "LogStartFix" : kind == JobKind.Review ? "LogStartReview" : kind == JobKind.Describe ? "LogStartDescribe" : "LogStartTranslate", work.Count, m_JobTotal, m_JobLanguage, client.Model));
 
             Task.Run(async () =>
             {
@@ -1834,7 +1880,7 @@ namespace AITranslate.Core
             }
             if (work.Count == 0)
             {
-                ProgressText = L("NothingToFix");
+                m_Progress = T("NothingToFix");
                 BumpUi();
                 return;
             }
@@ -1918,7 +1964,7 @@ namespace AITranslate.Core
             }
             if (work.Count == 0)
             {
-                ProgressText = L("NothingToDescribe");
+                m_Progress = T("NothingToDescribe");
                 BumpUi();
                 return;
             }
@@ -2119,59 +2165,59 @@ namespace AITranslate.Core
             const int kSamples = 2;
             const int kSampleLength = 36;
             // 列表倒序显示，先写明细，再写摘要，摘要就会出现在明细上方。
-            var details = new List<string>();
+            var details = new List<LocText>();
             switch (m_JobKind)
             {
                 case JobKind.Translate:
                     foreach (var item in batch.Where(w => outcome.Translations.TryGetValue(w.Key, out var t) && t != w.Source).Take(kSamples))
                     {
-                        details.Add(L("LogSample", ActivityLog.Shorten(item.Source, kSampleLength), ActivityLog.Shorten(outcome.Translations[item.Key], kSampleLength)));
+                        details.Add(T("LogSample", ActivityLog.Shorten(item.Source, kSampleLength), ActivityLog.Shorten(outcome.Translations[item.Key], kSampleLength)));
                     }
                     break;
                 case JobKind.Describe:
                     foreach (var item in batch.Where(w => outcome.Translations.ContainsKey(w.Key)).Take(kSamples))
                     {
                         string shownName = item.Asset != null && outcome.Translations.TryGetValue(item.Asset.TitleKey, out var generatedName) ? generatedName : item.Asset?.Title;
-                        details.Add(L("LogDescribeSample", ActivityLog.Shorten(shownName, 20), ActivityLog.Shorten(outcome.Translations[item.Key], 60)));
+                        details.Add(T("LogDescribeSample", ActivityLog.Shorten(shownName, 20), ActivityLog.Shorten(outcome.Translations[item.Key], 60)));
                     }
                     break;
             }
             foreach (var (before, after) in outcome.Rewrites.Take(kSamples))
             {
-                details.Add(L("LogRewrite", ActivityLog.Shorten(before, kSampleLength), ActivityLog.Shorten(after, kSampleLength)));
+                details.Add(T("LogRewrite", ActivityLog.Shorten(before, kSampleLength), ActivityLog.Shorten(after, kSampleLength)));
             }
             details.Reverse();
-            foreach (string d in details)
+            foreach (LocText d in details)
             {
                 ActivityLog.Detail(d);
             }
 
             int ok = batch.Count - outcome.Failed;
-            string line;
+            LocText line;
             switch (m_JobKind)
             {
                 case JobKind.Review:
                     string average = outcome.Scores.Count > 0 ? outcome.Scores.Values.Average().ToString("0.0") : "-";
-                    line = L("LogReviewBatch", mod.DisplayName, ok, outcome.Fixed, average);
+                    line = T("LogReviewBatch", mod.DisplayName, ok, outcome.Fixed, average);
                     break;
                 case JobKind.FixMixed:
-                    line = L("LogFixBatch", mod.DisplayName, ok, outcome.Fixed);
+                    line = T("LogFixBatch", mod.DisplayName, ok, outcome.Fixed);
                     break;
                 case JobKind.Describe:
-                    line = L("LogDescribeBatch", mod.DisplayName, ok);
+                    line = T("LogDescribeBatch", mod.DisplayName, ok);
                     break;
                 default:
-                    line = outcome.Fixed > 0 ? L("LogTranslateBatchReviewed", mod.DisplayName, ok, outcome.Fixed) : L("LogTranslateBatch", mod.DisplayName, ok);
+                    line = outcome.Fixed > 0 ? T("LogTranslateBatchReviewed", mod.DisplayName, ok, outcome.Fixed) : T("LogTranslateBatch", mod.DisplayName, ok);
                     break;
             }
             if (outcome.Failed > 0)
             {
-                line += L("LogFailedSuffix", outcome.Failed);
+                line = LocText.Concat(line, T("LogFailedSuffix", outcome.Failed));
             }
             ActivityLog.Add(outcome.Failed > 0 ? ActivityLog.Level.Warning : ActivityLog.Level.Info, line);
             if (outcome.Warning != null)
             {
-                ActivityLog.Warning(L("LogReviewFailed", mod.DisplayName, outcome.Warning));
+                ActivityLog.Warning(T("LogReviewFailed", mod.DisplayName, outcome.Warning));
             }
         }
 
@@ -2201,44 +2247,44 @@ namespace AITranslate.Core
             string average = m_JobScores.Count > 0 ? m_JobScores.Average().ToString("0.0") : "-";
 
             ProgressState state;
-            string summary;
+            LocText summary;
             if (error != null && cancelled)
             {
-                summary = L("Stopped", error, ok);
+                summary = T("Stopped", error, ok);
                 state = ProgressState.Failed;
             }
             else if (cancelled)
             {
-                summary = L("Cancelled", ok);
+                summary = T("Cancelled", ok);
                 state = ProgressState.Cancelled;
             }
             else
             {
                 summary = m_JobKind == JobKind.FixMixed
-                    ? L("DoneFix", ok, m_JobFixed, elapsed)
+                    ? T("DoneFix", ok, m_JobFixed, elapsed)
                     : m_JobKind == JobKind.Review
-                    ? L("DoneReview", ok, m_JobFixed, average, elapsed)
+                    ? T("DoneReview", ok, m_JobFixed, average, elapsed)
                     : m_JobKind == JobKind.Describe
-                        ? L("DoneDescribe", ok, m_JobFailed, elapsed)
+                        ? T("DoneDescribe", ok, m_JobFailed, elapsed)
                         : (m_JobScores.Count > 0
-                            ? L("DoneWithReview", ok, m_JobFailed, m_JobFixed, average, elapsed)
-                            : L("Done", ok, m_JobFailed, elapsed));
+                            ? T("DoneWithReview", ok, m_JobFailed, m_JobFixed, average, elapsed)
+                            : T("Done", ok, m_JobFailed, elapsed));
                 if (error != null)
                 {
-                    summary += L("SomeBatchesFailed", error);
+                    summary = LocText.Concat(summary, T("SomeBatchesFailed", error));
                 }
                 state = m_JobFailed > 0 ? ProgressState.Warning : ProgressState.Complete;
             }
             Mod.Log.Info("Job finished: " + summary);
             ActivityLog.Add(state == ProgressState.Failed ? ActivityLog.Level.Error : state == ProgressState.Warning || state == ProgressState.Cancelled ? ActivityLog.Level.Warning : ActivityLog.Level.Success, summary);
 
-            Notify(summary, state, 100, pop: true);
+            Notify(summary.ToString(), state, 100, pop: true);
             RefreshGameUI();
             // 不再整体重新检测（会卡住游戏几秒），批次结果已在 ApplyBatch 里更新到现有状态。
             UpdateOverview();
             ComputeQualityInBackground(m_Scan, m_GlossaryTask);
             m_LastSummary = summary;
-            ProgressText = L("LastJob", summary);
+            m_Progress = T("LastJob", summary);
 
             var chainKeys = m_ChainDescribeKeys;
             m_ChainDescribeKeys = null;
@@ -2260,13 +2306,13 @@ namespace AITranslate.Core
             int done = m_JobDone;
             int total = Math.Max(1, m_JobTotal);
             int percent = done * 100 / total;
-            ProgressText = m_JobKind == JobKind.FixMixed
-                ? L("Fixing", done, m_JobTotal, percent, m_JobFixed, m_JobCurrent)
+            m_Progress = m_JobKind == JobKind.FixMixed
+                ? T("Fixing", done, m_JobTotal, percent, m_JobFixed, m_JobCurrent)
                 : m_JobKind == JobKind.Review
-                ? L("Reviewing", done, m_JobTotal, percent, m_JobFixed, m_JobCurrent)
+                ? T("Reviewing", done, m_JobTotal, percent, m_JobFixed, m_JobCurrent)
                 : m_JobKind == JobKind.Describe
-                    ? L("Describing", done, m_JobTotal, percent, m_JobFailed, m_JobCurrent)
-                    : L("Translating", done, m_JobTotal, percent, m_JobFailed, m_JobCurrent);
+                    ? T("Describing", done, m_JobTotal, percent, m_JobFailed, m_JobCurrent)
+                    : T("Translating", done, m_JobTotal, percent, m_JobFailed, m_JobCurrent);
             if (percent != m_LastNotifiedPercent)
             {
                 m_LastNotifiedPercent = percent;
@@ -2301,7 +2347,7 @@ namespace AITranslate.Core
             if (m_Busy)
             {
                 m_Cts?.Cancel();
-                ProgressText = L("Cancelling");
+                m_Progress = T("Cancelling");
                 BumpUi();
             }
         }
@@ -2320,7 +2366,7 @@ namespace AITranslate.Core
                 Mod.Log.Info("Deleted translations and generated descriptions of " + key);
                 ReloadI18N();
                 ApplyToGame(forceReload: true);
-                ProgressText = L("Deleted");
+                m_Progress = T("Deleted");
             }
             DoScan();
         }
@@ -2341,7 +2387,7 @@ namespace AITranslate.Core
             {
                 DoScan();
             }
-            ProgressText = L("Reloaded");
+            m_Progress = T("Reloaded");
             BumpUi();
         }
 
@@ -2510,7 +2556,7 @@ namespace AITranslate.Core
             }
             var client = new ChatClient(m_Setting.ApiUrl, m_Setting.ApiKey, m_Setting.ModelName, m_Setting.Temperature);
             string locale = Localization.activeLocaleId;
-            ApiStatusText = L("Connecting", client.Endpoint);
+            m_ApiStatus = T("Connecting", client.Endpoint);
             IsTesting = true;
             BumpUi();
 
@@ -2534,9 +2580,9 @@ namespace AITranslate.Core
                 long ms = sw.ElapsedMilliseconds;
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    ApiStatusText = error == null
-                        ? L("ConnectOk", client.Model, (ms / 1000.0).ToString("0.0"), SampleFromReply(reply))
-                        : L("ConnectFailed", error.Message);
+                    m_ApiStatus = error == null
+                        ? T("ConnectOk", client.Model, (ms / 1000.0).ToString("0.0"), SampleFromReply(reply))
+                        : T("ConnectFailed", error.Message);
                     IsTesting = false;
                     BumpUi();
                 });
@@ -2595,6 +2641,11 @@ namespace AITranslate.Core
         {
             m_Disposed = true;
             m_Cts?.Cancel();
+            var lm = Localization;
+            if (lm != null)
+            {
+                lm.onActiveDictionaryChanged -= OnActiveDictionaryChanged;
+            }
             if (m_WatchUpdater.HasValue)
             {
                 MainThreadDispatcher.UnregisterUpdater(m_WatchUpdater.Value);

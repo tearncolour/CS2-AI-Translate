@@ -27,59 +27,52 @@ namespace AITranslate.Core
         {
             public DateTime Time;
             public Level Level;
-            public string Text;
+            public LocText Text;   // 显示时才按当前语言格式化，切换游戏语言后旧记录也跟着变
         }
 
         private static readonly LinkedList<Entry> s_Entries = new LinkedList<Entry>();
         private static readonly object s_Lock = new object();
         private static int s_Version;
         private static int s_RenderedVersion = -1;
+        private static int s_RenderedGeneration = -1;
         private static bool s_RenderedDetails;
         private static string s_Rendered = string.Empty;
 
         public static int Version => s_Version;
 
-        /// <summary>API 重试提示的格式（{0}=次数，{1}=原因），由服务按当前语言设置。</summary>
-        public static string RetryFormat { get; set; } = "Retry {0}: {1}";
+        public static void Retry(int attempt, string reason) => Add(Level.Warning, LocText.Of("LogRetry", attempt, reason));
 
-        public static void Retry(int attempt, string reason)
+        public static void Info(string text) => Add(Level.Info, LocText.Literal(text));
+
+        public static void Success(string text) => Add(Level.Success, LocText.Literal(text));
+
+        public static void Detail(string text) => Add(Level.Detail, LocText.Literal(text));
+
+        public static void Warning(string text) => Add(Level.Warning, LocText.Literal(text));
+
+        public static void Error(string text) => Add(Level.Error, LocText.Literal(text));
+
+        public static void Info(LocText text) => Add(Level.Info, text);
+
+        public static void Success(LocText text) => Add(Level.Success, text);
+
+        public static void Detail(LocText text) => Add(Level.Detail, text);
+
+        public static void Warning(LocText text) => Add(Level.Warning, text);
+
+        public static void Error(LocText text) => Add(Level.Error, text);
+
+        public static void Add(Level level, string text) => Add(level, LocText.Literal(text));
+
+        public static void Add(Level level, LocText text)
         {
-            string text;
-            try
-            {
-                text = string.Format(RetryFormat, attempt, reason);
-            }
-            catch (FormatException)
-            {
-                text = "Retry " + attempt + ": " + reason;
-            }
-            Add(Level.Warning, text);
-        }
-
-        public static void Info(string text) => Add(Level.Info, text);
-
-        public static void Success(string text) => Add(Level.Success, text);
-
-        public static void Detail(string text) => Add(Level.Detail, text);
-
-        public static void Warning(string text) => Add(Level.Warning, text);
-
-        public static void Error(string text) => Add(Level.Error, text);
-
-        public static void Add(Level level, string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
+            if (text == null || text.IsEmpty)
             {
                 return;
             }
-            string line = text.Replace("\r", string.Empty).Replace("\n", " ");
-            if (line.Length > kMaxLineLength)
-            {
-                line = line.Substring(0, kMaxLineLength) + "…";
-            }
             lock (s_Lock)
             {
-                s_Entries.AddFirst(new Entry { Time = DateTime.Now, Level = level, Text = line });
+                s_Entries.AddFirst(new Entry { Time = DateTime.Now, Level = level, Text = text });
                 while (s_Entries.Count > kMaxLines)
                 {
                     s_Entries.RemoveLast();
@@ -101,7 +94,8 @@ namespace AITranslate.Core
         public static string Render(bool showDetails, string emptyText, Func<Level, string> prefix)
         {
             int version = s_Version;
-            if (version == s_RenderedVersion && showDetails == s_RenderedDetails)
+            int generation = LocText.Generation;
+            if (version == s_RenderedVersion && generation == s_RenderedGeneration && showDetails == s_RenderedDetails)
             {
                 return s_Rendered;
             }
@@ -118,17 +112,19 @@ namespace AITranslate.Core
                     {
                         sb.Append('\n');
                     }
+                    string line = Shorten(e.Text.ToString().Replace("\r", string.Empty), kMaxLineLength);
                     // 明细行缩进、不带时间，紧跟在它所属的批次下面（列表是倒序的，所以明细先于批次行写入）。
                     if (e.Level == Level.Detail)
                     {
-                        sb.Append("　　　　　").Append(e.Text);
+                        sb.Append("　　　　　").Append(line);
                         continue;
                     }
-                    sb.Append(e.Time.ToString("HH:mm:ss")).Append("　").Append(prefix?.Invoke(e.Level) ?? string.Empty).Append(e.Text);
+                    sb.Append(e.Time.ToString("HH:mm:ss")).Append("　").Append(prefix?.Invoke(e.Level) ?? string.Empty).Append(line);
                 }
             }
             s_Rendered = sb.Length > 0 ? sb.ToString() : emptyText;
             s_RenderedVersion = version;
+            s_RenderedGeneration = generation;
             s_RenderedDetails = showDetails;
             return s_Rendered;
         }
