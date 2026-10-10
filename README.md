@@ -20,6 +20,7 @@ AI Translate! finds every bit of mod text that isn't in your game language yet (
 - Writes descriptions for assets that have none and names assets that only have a random ID.
 - Patches official/bundled translations that left English words behind (only if the change really removes English).
 - Scanning is time-sliced and runs in the background, so the game doesn't freeze.
+- The settings page itself comes in all 12 game languages; other languages are translated automatically once an API key is set.
 
 Simplified Chinese is the most tested language. Other languages use the same pipeline but have seen less real use, so feedback is very welcome.
 
@@ -36,6 +37,7 @@ AI Translate! 会找出 mod 里还不是你游戏语言的文字（设置页、�
 - 给没有描述的资产写简介，给只有随机编号的资产起名。
 - 修正官方或自带译文里漏翻的英文（只采用真正减少了英文的改写）。
 - 检测分帧、放在后台进行，不卡游戏。
+- 设置页本身预置游戏的全部 12 种语言；其他语言填好 API Key 后自动翻译。
 
 简体中文测试得最多，其他语言走同一套流程但实际使用较少，欢迎反馈。
 
@@ -62,7 +64,8 @@ Tests/bin/Release/net48/AITranslate.Tests.exe
 | Path | What it is |
 | --- | --- |
 | `Mod.cs`, `Setting.cs` | Entry point and the options page |
-| `Locale/` | Built-in English and Simplified Chinese UI text |
+| `Locale/Locales.cs` | Settings-page text: English and Simplified Chinese (source of truth) |
+| `Locale/Languages/*.json` | Settings-page text for the other 10 game languages, keyed like `OPT:TranslateAllNeeded` / `UI:StatusMods` |
 | `Core/ScanSnapshot.cs` | Captures game data on the main thread in small time slices |
 | `Core/ModScanner.cs` | Background analysis: which text belongs to which mod and what still needs translating |
 | `Core/TranslationService.cs` | Jobs (translate / review / describe / fix mixed text), applying results, UI state |

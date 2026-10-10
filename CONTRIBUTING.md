@@ -11,6 +11,11 @@ All changes go through pull requests; only the author merges into `main`.
 2. Make your change, build it and run the tests (see the README). / 修改后编译并运行测试（见 README）。
 3. Open a pull request and describe what you changed and how you tested it. / 提交 Pull Request，说明改了什么、怎么测试的。
 
+## Improving the settings-page text / 改进设置页的翻译
+
+The settings page ships in all 12 game languages. English and Simplified Chinese live in `Locale/Locales.cs`; every other language is a JSON file in `Locale/Languages/` (for example `de-DE.json`). To fix a wording, edit the value for that key and open a pull request. Keep `{0}`, `{1}`… placeholders and `\n` line breaks as they are; the tests check this.
+设置页预置游戏的全部 12 种语言。英文和简体中文在 `Locale/Locales.cs`，其他语言在 `Locale/Languages/` 下的 JSON 文件里（如 `de-DE.json`）。要改某个说法，直接改对应键的值并提交 PR；`{0}`、`{1}` 等占位符和 `\n` 换行要保留，测试会检查。
+
 ## Translation feedback / 翻译问题反馈
 
 If a translation is wrong or text is left untranslated, please open an issue with:

@@ -31,6 +31,12 @@
     <None Remove="Tests\**" />
   </ItemGroup>
 
+  <!-- 设置页的预置语言（英文、简体中文之外），编进 dll，资源名 AITranslate.Lang.<语言>.json。 -->
+  <ItemGroup>
+    <None Remove="Locale\Languages\*.json" />
+    <EmbeddedResource Include="Locale\Languages\*.json" LogicalName="AITranslate.Lang.%(Filename).json" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>

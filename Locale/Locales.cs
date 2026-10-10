@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Colossal;
+using Newtonsoft.Json;
 
 namespace AITranslate.Locale
 {
@@ -56,8 +60,8 @@ namespace AITranslate.Locale
                 "API key", "Create one at platform.deepseek.com (starts with sk-). Stored on this computer only."),
             (nameof(Setting.ApiUrl), "API 地址", "用 DeepSeek 不用改。换成其他 OpenAI 兼容服务时填它的地址。",
                 "API URL", "Leave as is for DeepSeek. For another OpenAI-compatible service, enter its URL."),
-            (nameof(Setting.ModelName), "模型", "DeepSeek 用 deepseek-chat 即可。",
-                "Model", "deepseek-chat works for DeepSeek."),
+            (nameof(Setting.ModelName), "模型", "DeepSeek 用 deepseek-flash 即可。",
+                "Model", "deepseek-flash works for DeepSeek."),
             (nameof(Setting.TestConnection), "测试连接", "发一句示例，检查地址、Key 和模型能不能用。",
                 "Test connection", "Send one sample to check the URL, key and model."),
 
@@ -232,55 +236,149 @@ namespace AITranslate.Locale
             ("Folder", "\n译文目录：{0}", "\nTranslation folder: {0}"),
         };
 
-        public static Dictionary<string, string> Build(Setting s, bool chinese)
+        // 固定文字：标签页、分组、下拉选项、确认框。(逻辑键, 中文, 英文)
+        // 只放数据（不碰 Setting 类型），测试程序不加载游戏 dll 也能读取；本地化 ID 在 Build 里按键名算出。
+        private static readonly (string key, string zh, string en)[] s_Fixed =
         {
-            var d = new Dictionary<string, string>
+            ("TAB:" + Setting.kMainTab, "翻译", "Translate"),
+            ("TAB:" + Setting.kLogTab, "日志", "Log"),
+            ("TAB:" + Setting.kSettingsTab, "设置", "Settings"),
+            ("TAB:" + Setting.kAdvancedTab, "高级", "Advanced"),
+
+            ("GROUP:" + Setting.kStatusGroup, "概况", "Overview"),
+            ("GROUP:" + Setting.kModGroup, "单个 mod", "One mod"),
+            ("GROUP:" + Setting.kLogGroup, "日志（最新的在最上面）", "Log (newest first)"),
+            ("GROUP:" + Setting.kApiGroup, "连接", "Connection"),
+            ("GROUP:" + Setting.kAutoGroup, "自动处理", "Automatic"),
+            ("GROUP:" + Setting.kTuningGroup, "翻译参数", "Translation"),
+            ("GROUP:" + Setting.kMaintenanceGroup, "维护", "Maintenance"),
+
+            ("ENUM:StatusFilterOption.All", "全部", "All"),
+            ("ENUM:StatusFilterOption.Actionable", "需要处理", "Needs attention"),
+            ("ENUM:StatusFilterOption.Pending", "待翻译", "Pending"),
+            ("ENUM:StatusFilterOption.MissingDescriptions", "缺描述", "No description"),
+            ("ENUM:StatusFilterOption.Polish", "待优化", "To polish"),
+            ("ENUM:StatusFilterOption.Done", "已完成", "Done"),
+
+            ("ENUM:ReviewScopeOption.Suspicious", "只查可疑的", "Suspicious only"),
+            ("ENUM:ReviewScopeOption.Unreviewed", "没审过的", "Not yet reviewed"),
+            ("ENUM:ReviewScopeOption.All", "全部", "Everything"),
+
+            ("WARN:" + nameof(Setting.RetranslateSelected), "重新翻译这个 mod 的全部文本？已保存的译文会被覆盖。", "Retranslate all text of this mod? Saved translations will be overwritten."),
+            ("WARN:" + nameof(Setting.DeleteSelected), "删除这个 mod 的 AI 译文和生成的描述？", "Delete this mod's AI translations and generated descriptions?"),
+            ("WARN:" + nameof(Setting.TranslateAllNeeded), "翻译所有待翻译的 mod？会产生 API 费用。", "Translate all pending mods? This uses your API credit."),
+            ("WARN:" + nameof(Setting.ReviewAllMods), "审校所有 mod 的译文？会产生 API 费用。", "Review the translations of all mods? This uses your API credit."),
+            ("WARN:" + nameof(Setting.DescribeAllAssets), "给所有缺描述的资产写简介？会产生 API 费用。", "Describe all assets without a description? This uses your API credit."),
+            ("WARN:" + nameof(Setting.FixMixedAll), "修正所有夹着英文的译文？会产生 API 费用。", "Fix all translations with leftover English? This uses your API credit."),
+        };
+
+        /// <summary>固定文字的逻辑键 → 游戏本地化 ID。</summary>
+        private static string FixedId(Setting s, string key)
+        {
+            int colon = key.IndexOf(':');
+            string kind = key.Substring(0, colon);
+            string name = key.Substring(colon + 1);
+            switch (kind)
             {
-                { s.GetSettingsLocaleID(), Mod.DisplayName },
-                { s.GetOptionTabLocaleID(Setting.kMainTab), chinese ? "翻译" : "Translate" },
-                { s.GetOptionTabLocaleID(Setting.kLogTab), chinese ? "日志" : "Log" },
-                { s.GetOptionTabLocaleID(Setting.kSettingsTab), chinese ? "设置" : "Settings" },
-                { s.GetOptionTabLocaleID(Setting.kAdvancedTab), chinese ? "高级" : "Advanced" },
+                case "TAB":
+                    return s.GetOptionTabLocaleID(name);
+                case "GROUP":
+                    return s.GetOptionGroupLocaleID(name);
+                case "WARN":
+                    return s.GetOptionWarningLocaleID(name);
+                case "ENUM":
+                    int dot = name.IndexOf('.');
+                    Type type = typeof(Setting).GetNestedType(name.Substring(0, dot));
+                    return s.GetEnumValueLocaleID((Enum)Enum.Parse(type, name.Substring(dot + 1)));
+                default:
+                    throw new ArgumentException("Unknown UI key " + key);
+            }
+        }
 
-                { s.GetOptionGroupLocaleID(Setting.kStatusGroup), chinese ? "概况" : "Overview" },
-                { s.GetOptionGroupLocaleID(Setting.kModGroup), chinese ? "单个 mod" : "One mod" },
-                { s.GetOptionGroupLocaleID(Setting.kLogGroup), chinese ? "日志（最新的在最上面）" : "Log (newest first)" },
-                { s.GetOptionGroupLocaleID(Setting.kApiGroup), chinese ? "连接" : "Connection" },
-                { s.GetOptionGroupLocaleID(Setting.kAutoGroup), chinese ? "自动处理" : "Automatic" },
-                { s.GetOptionGroupLocaleID(Setting.kTuningGroup), chinese ? "翻译参数" : "Translation" },
-                { s.GetOptionGroupLocaleID(Setting.kMaintenanceGroup), chinese ? "维护" : "Maintenance" },
+        /// <summary>
+        /// 预置的界面语言（英文、简体中文写在本文件里，其余放在 Locale/Languages/&lt;语言&gt;.json，编进 dll）。
+        /// 就是游戏自带的全部语言；其他语言由本 mod 在填好 API Key 后自己翻译。
+        /// </summary>
+        public static readonly string[] BundledLocales =
+        {
+            "en-US", "zh-HANS", "zh-HANT", "de-DE", "es-ES", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pl-PL", "pt-BR", "ru-RU",
+        };
 
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.All), chinese ? "全部" : "All" },
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.Actionable), chinese ? "需要处理" : "Needs attention" },
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.Pending), chinese ? "待翻译" : "Pending" },
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.MissingDescriptions), chinese ? "缺描述" : "No description" },
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.Polish), chinese ? "待优化" : "To polish" },
-                { s.GetEnumValueLocaleID(Setting.StatusFilterOption.Done), chinese ? "已完成" : "Done" },
-
-                { s.GetEnumValueLocaleID(Setting.ReviewScopeOption.Suspicious), chinese ? "只查可疑的" : "Suspicious only" },
-                { s.GetEnumValueLocaleID(Setting.ReviewScopeOption.Unreviewed), chinese ? "没审过的" : "Not yet reviewed" },
-                { s.GetEnumValueLocaleID(Setting.ReviewScopeOption.All), chinese ? "全部" : "Everything" },
-
-                { s.GetOptionWarningLocaleID(nameof(Setting.RetranslateSelected)), chinese ? "重新翻译这个 mod 的全部文本？已保存的译文会被覆盖。" : "Retranslate all text of this mod? Saved translations will be overwritten." },
-                { s.GetOptionWarningLocaleID(nameof(Setting.DeleteSelected)), chinese ? "删除这个 mod 的 AI 译文和生成的描述？" : "Delete this mod's AI translations and generated descriptions?" },
-                { s.GetOptionWarningLocaleID(nameof(Setting.TranslateAllNeeded)), chinese ? "翻译所有待翻译的 mod？会产生 API 费用。" : "Translate all pending mods? This uses your API credit." },
-                { s.GetOptionWarningLocaleID(nameof(Setting.ReviewAllMods)), chinese ? "审校所有 mod 的译文？会产生 API 费用。" : "Review the translations of all mods? This uses your API credit." },
-                { s.GetOptionWarningLocaleID(nameof(Setting.DescribeAllAssets)), chinese ? "给所有缺描述的资产写简介？会产生 API 费用。" : "Describe all assets without a description? This uses your API credit." },
-                { s.GetOptionWarningLocaleID(nameof(Setting.FixMixedAll)), chinese ? "修正所有夹着英文的译文？会产生 API 费用。" : "Fix all translations with leftover English? This uses your API credit." },
-            };
+        /// <summary>全部界面文字：(逻辑键, 中文, 英文)。逻辑键也是语言文件里的键。</summary>
+        public static IEnumerable<(string key, string zh, string en)> AllEntries()
+        {
             foreach (var (name, zhLabel, zhDesc, enLabel, enDesc) in s_Options)
             {
-                d[s.GetOptionLabelLocaleID(name)] = chinese ? zhLabel : enLabel;
-                d[s.GetOptionDescLocaleID(name)] = chinese ? zhDesc : enDesc;
+                yield return ("OPT:" + name, zhLabel, enLabel);
+                yield return ("DESC:" + name, zhDesc, enDesc);
+            }
+            foreach (var (key, zh, en) in s_Fixed)
+            {
+                yield return (key, zh, en);
             }
             foreach (var (name, zh, en) in s_Ui)
             {
-                d[kUiPrefix + name] = chinese ? zh : en;
-                // 「类型」下拉框的选项与界面里的类型名共用同一份文字。
-                if (name.StartsWith("Category", System.StringComparison.Ordinal)
-                    && System.Enum.TryParse(name.Substring("Category".Length), out Setting.ModCategory category))
+                yield return ("UI:" + name, zh, en);
+            }
+        }
+
+        /// <summary>读取编进 dll 的语言文件（逻辑键 → 文字）；没有该语言时返回 null。</summary>
+        public static Dictionary<string, string> LoadLanguageFile(string locale, Action<string> onError = null)
+        {
+            try
+            {
+                using (var stream = typeof(LocaleTable).Assembly.GetManifestResourceStream("AITranslate.Lang." + locale + ".json"))
                 {
-                    d[s.GetEnumValueLocaleID(category)] = chinese ? zh : en;
+                    if (stream == null)
+                    {
+                        return null;
+                    }
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    {
+                        return JsonConvert.DeserializeObject<Dictionary<string, string>>(reader.ReadToEnd());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                onError?.Invoke($"Cannot read built-in {locale} UI text: {ex.Message}");   // 不直接用 Mod.Log：测试程序不加载游戏 dll
+                return null;
+            }
+        }
+
+        /// <summary>某种语言的全部界面文字（本地化 ID → 文字）。语言文件里缺的条目用英文。</summary>
+        public static Dictionary<string, string> Build(Setting s, string locale)
+        {
+            bool chinese = locale == "zh-HANS";
+            var file = chinese || locale == "en-US" ? null : LoadLanguageFile(locale, message => Mod.Log.Warn(message));
+            string Pick(string key, string zh, string en)
+            {
+                if (chinese)
+                {
+                    return zh;
+                }
+                return file != null && file.TryGetValue(key, out var text) && !string.IsNullOrWhiteSpace(text) ? text : en;
+            }
+
+            var d = new Dictionary<string, string> { { s.GetSettingsLocaleID(), Mod.DisplayName } };
+            foreach (var (key, zh, en) in s_Fixed)
+            {
+                d[FixedId(s, key)] = Pick(key, zh, en);
+            }
+            foreach (var (name, zhLabel, zhDesc, enLabel, enDesc) in s_Options)
+            {
+                d[s.GetOptionLabelLocaleID(name)] = Pick("OPT:" + name, zhLabel, enLabel);
+                d[s.GetOptionDescLocaleID(name)] = Pick("DESC:" + name, zhDesc, enDesc);
+            }
+            foreach (var (name, zh, en) in s_Ui)
+            {
+                string text = Pick("UI:" + name, zh, en);
+                d[kUiPrefix + name] = text;
+                // 「类型」下拉框的选项与界面里的类型名共用同一份文字。
+                if (name.StartsWith("Category", StringComparison.Ordinal)
+                    && Enum.TryParse(name.Substring("Category".Length), out Setting.ModCategory category))
+                {
+                    d[s.GetEnumValueLocaleID(category)] = text;
                 }
             }
             return d;
@@ -299,37 +397,21 @@ namespace AITranslate.Locale
         }
     }
 
-    public class LocaleEN : IDictionarySource
+    /// <summary>本 mod 设置页的一种语言。</summary>
+    public class LocaleSource : IDictionarySource
     {
         private readonly Setting m_Setting;
+        private readonly string m_Locale;
 
-        public LocaleEN(Setting setting)
+        public LocaleSource(Setting setting, string locale)
         {
             m_Setting = setting;
+            m_Locale = locale;
         }
 
         public IEnumerable<KeyValuePair<string, string>> ReadEntries(IList<IDictionaryEntryError> errors, Dictionary<string, int> indexCounts)
         {
-            return LocaleTable.Build(m_Setting, chinese: false);
-        }
-
-        public void Unload()
-        {
-        }
-    }
-
-    public class LocaleZH : IDictionarySource
-    {
-        private readonly Setting m_Setting;
-
-        public LocaleZH(Setting setting)
-        {
-            m_Setting = setting;
-        }
-
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(IList<IDictionaryEntryError> errors, Dictionary<string, int> indexCounts)
-        {
-            return LocaleTable.Build(m_Setting, chinese: true);
+            return LocaleTable.Build(m_Setting, m_Locale);
         }
 
         public void Unload()

@@ -22,6 +22,23 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // 导出设置页的英文原文（逻辑键 → 英文），供编写 Locale/Languages/*.json 参考。
+        string exportUi = Environment.GetEnvironmentVariable("EXPORT_UI");
+        if (!string.IsNullOrEmpty(exportUi))
+        {
+            var english = new System.Collections.Generic.SortedDictionary<string, string>(StringComparer.Ordinal);
+            var chinese = new System.Collections.Generic.SortedDictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (key, zhText, text) in AITranslate.Locale.LocaleTable.AllEntries())
+            {
+                english[key] = text;
+                chinese[key] = zhText;
+            }
+            File.WriteAllText(exportUi, Newtonsoft.Json.JsonConvert.SerializeObject(english, Newtonsoft.Json.Formatting.Indented), new System.Text.UTF8Encoding(false));
+            File.WriteAllText(Path.ChangeExtension(exportUi, ".zh.json"), Newtonsoft.Json.JsonConvert.SerializeObject(chinese, Newtonsoft.Json.Formatting.Indented), new System.Text.UTF8Encoding(false));
+            Console.WriteLine("exported " + english.Count);
+            return 0;
+        }
+
         Console.OutputEncoding = Encoding.UTF8;
 
         // ---------- TextRules
@@ -99,6 +116,36 @@ internal static class Program
         Check(QualityChecker.LeftoverEnglish("Unlock roads in every Playset", "解锁所有游玩集中的道路", "zh-HANS", null, "Road Builder [BETA]")
             < QualityChecker.LeftoverEnglish("Unlock roads in every Playset", "解锁所有 Playset 中的道路", "zh-HANS", null, "Road Builder [BETA]"), "mixed: real fix improves");
         Check(QualityChecker.LeftoverEnglish("Mediterranean Heritage Residential", "Mediterranean Heritage中密度住宅", "zh-HANS") > 0, "mixed: classic case still caught");
+
+        // 预置界面语言：每个语言文件都要有全部条目，占位符和换行与英文一致，没有多余的键
+        {
+            var english = new System.Collections.Generic.Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (key, _, text) in AITranslate.Locale.LocaleTable.AllEntries())
+            {
+                english[key] = text;
+            }
+            int Count(string s, string part) { int n = 0, i = 0; while ((i = s.IndexOf(part, i, StringComparison.Ordinal)) >= 0) { n++; i += part.Length; } return n; }
+            foreach (string locale in AITranslate.Locale.LocaleTable.BundledLocales)
+            {
+                if (locale == "en-US" || locale == "zh-HANS")
+                {
+                    continue;
+                }
+                var file = AITranslate.Locale.LocaleTable.LoadLanguageFile(locale);
+                Check(file != null, "lang file embedded: " + locale);
+                if (file == null)
+                {
+                    continue;
+                }
+                var missing = english.Keys.Where(k => !file.TryGetValue(k, out var t) || string.IsNullOrWhiteSpace(t)).ToList();
+                var extra = file.Keys.Where(k => !english.ContainsKey(k)).ToList();
+                var badPlaceholders = english.Where(p => file.TryGetValue(p.Key, out var t) && t != null
+                    && (!TextRules.PlaceholdersMatch(p.Value, t, out _) || Count(p.Value, "\n") != Count(t, "\n"))).Select(p => p.Key).ToList();
+                Check(missing.Count == 0, $"lang {locale}: all keys present" + (missing.Count > 0 ? " missing " + string.Join(",", missing.Take(5)) : ""));
+                Check(extra.Count == 0, $"lang {locale}: no unknown keys" + (extra.Count > 0 ? " extra " + string.Join(",", extra.Take(5)) : ""));
+                Check(badPlaceholders.Count == 0, $"lang {locale}: placeholders and line breaks" + (badPlaceholders.Count > 0 ? " bad " + string.Join(",", badPlaceholders.Take(5)) : ""));
+            }
+        }
 
         // 界面文字跟随游戏语言：已经写进日志、概况的文字，切换语言后按新语言重新显示
         {
