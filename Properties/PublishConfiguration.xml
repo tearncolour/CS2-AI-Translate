@@ -17,6 +17,7 @@ AI Translate! finds every bit of mod text that isn't in your game language yet: 
 - **Set and forget.** Newly installed or updated mods are translated in the background.
 - **It sounds like the game.** It follows the game's own terms and the official building-name format ("EU Residential Low 01 - L1 2x2"), and checks placeholders like `{0}`, `%s` and `&lt;b&gt;` so nothing breaks. An optional AI review scores each entry and rewrites weak ones, once.
 - **No stutter.** Scanning is split across frames and done in the background.
+- **The settings page speaks your language too.** It comes in all 12 game languages and switches with the game; other languages are translated automatically once you enter an API key.
 
 Existing translations always win. Anything the mod author shipped, the official game text and community translations in I18N Everywhere are never overwritten; this only fills the gaps.
 
@@ -75,6 +76,7 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 - **装完不用管**。新装或更新的 mod 会在后台自动翻译。
 - **翻得像游戏原生的**。沿用游戏自己的术语和官方建筑命名格式（「欧洲低层住宅 01 - L1 2x2」），并检查 `{0}`、`%s`、`&lt;b&gt;` 这类占位符，不会把界面弄坏。可选 AI 审校，给每条打分、重写不好的，审过就定稿。
 - **不卡游戏**。检测分帧进行，放在后台做。
+- **设置页也说你的语言**。预置游戏的全部 12 种语言，跟着游戏语言切换；其他语言填好 API Key 后自动翻译。
 
 已有的翻译永远优先。mod 作者自带的、游戏官方的、I18N Everywhere 社区翻好的都不会被覆盖，它只补缺的部分。
 
@@ -124,11 +126,11 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 	<Screenshot Value="Properties/Screenshots/02_asset.jpg" />
 	<Screenshot Value="Properties/Screenshots/03_list_log.jpg" />
 	<Tag Value="Code Mod" />
-	<ModVersion Value="1.0.1" />
+	<ModVersion Value="1.0.2" />
 	<GameVersion Value="1.6.*" />
 	<!--I18N Everywhere（推荐依赖：译文以它的语言包格式保存）-->
 	<Dependency Id="75426" />
-	<ChangeLog Value="Fix mixed text: leftover mod names, [tags] and file paths no longer count as untranslated English; rewrites are kept only if they actually remove English, and earlier rewrites that only reworded a sentence are rolled back. Anything already checked is never sent again. The mod no longer rewrites its own interface. Scanning no longer causes a short hitch when it finishes. / 修正混杂：mod 名、[标签]、文件路径不再算作漏翻的英文；只保留真正减少了英文的改写，之前只是换说法的改写会自动撤回；检查过的不再重复发送；不再改写本 mod 自己的界面。检测结束时不再短暂卡顿。" />
+	<ChangeLog Value="The settings page now comes in all 12 game languages and switches with the game language, including the overview, progress and log. Other languages are translated automatically once an API key is set. The default model is now deepseek-flash (settings still on the old default are switched over). / 设置页预置游戏的全部 12 种语言，并随游戏语言切换（概况、进度、日志也一起切换）；其他语言填好 API Key 后自动翻译。默认模型改为 deepseek-flash（仍是旧默认值的设置会自动换过去）。" />
 	<!--Public / Private / Unlisted-->
 	<AccessLevel Value="Public" />
 	<ExternalLink Type="github" Url="https://github.com/tearncolour/CS2-AI-Translate" />
