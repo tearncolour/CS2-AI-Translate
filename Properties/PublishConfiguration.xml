@@ -1,0 +1,130 @@
+<Publish>
+	<!--首次发布后把平台分配的 ID 填到这里，之后用 NewVersion / Update 更新-->
+	<ModId Value="162792" />
+	<DisplayName Value="AI Translate! - Mods and Assets in Your Language" />
+	<ShortDescription Value="Translates mod settings, tool panels, asset names and descriptions into your game language with AI. Translated once, saved for good. Mostly tested in Chinese." />
+	<LongDescription>
+**Your mods, in your language.**
+
+AI Translate! finds every bit of mod text that isn't in your game language yet: settings pages, tool panels, tooltips, asset names and descriptions. It translates them with DeepSeek or any other OpenAI-compatible API. Each line is translated once, saved, and shows up in the game right away.
+
+**What you get**
+
+- **Mod panels and settings in your language.** The screenshots show Parking Lot Tool before and after.
+- **Assets with real names and descriptions.** Assets that came without a description get a short one written for them, and assets named only with a random ID get a proper name. Nothing is made up: no invented numbers or regions.
+- **A mod list you can read.** The Options menu shows each mod as "Translated name (Original Name)". Everywhere else, mod and tool names are kept as they are.
+- **Leftover English fixed.** Official or bundled translations that left English words behind get patched. Brand and personal names stay.
+- **Set and forget.** Newly installed or updated mods are translated in the background.
+- **It sounds like the game.** It follows the game's own terms and the official building-name format ("EU Residential Low 01 - L1 2x2"), and checks placeholders like `{0}`, `%s` and `&lt;b&gt;` so nothing breaks. An optional AI review scores each entry and rewrites weak ones, once.
+- **No stutter.** Scanning is split across frames and done in the background.
+
+Existing translations always win. Anything the mod author shipped, the official game text and community translations in I18N Everywhere are never overwritten; this only fills the gaps.
+
+A note on languages: I mainly play and test in Simplified Chinese. Every other language goes through the same process but has had far less real use, so if something reads oddly or gets missed in your language, please tell me in the comments.
+
+---
+
+**Getting started**
+
+1. Sign up at platform.deepseek.com, create an API key (it starts with sk-) and add a little credit.
+2. In the game, open Options → AI Translate! → Settings, paste the key and click "Test connection". "Connected" plus a sample sentence means you're set.
+3. Go to the Translate tab, click "Translate all", and go play. Progress is in the Overview, each batch appears on the Log tab, and translations take effect immediately.
+
+From then on, new mods are handled in the background (on by default).
+
+**The settings page**
+
+The Translate tab starts with an overview of what's left and what's running. Its buttons only appear when there's work for them. To handle one mod, search for it under "One mod" (translated names, initials and typos all work), pick it, and use the buttons that apply.
+
+The Settings tab holds your API details and the automatic options: translate new mods, review after translating and describe assets after translating are on; translate everything on startup is off. The Advanced tab lets you give the AI extra instructions (e.g. "always translate Lane as …") and adjust batch size and parallel requests. Most people never need it.
+
+**What it costs**
+
+You pay your API provider directly; the mod is free. Most mods have a few dozen to a few hundred lines; big asset packs can have thousands. Anything that sends a lot of requests asks first, and automatic translation skips mods with more than 1500 entries. AI review adds roughly half again; turn it off if you don't need it.
+
+**If something's not right**
+
+- "This mod is missing dependencies" on the mod page, even though I18N Everywhere is listed as added right below it? That warning is a display bug in the in-game Paradox Mods page: it appears on any subscribed mod that declares a dependency, whether or not the dependency is installed. Restarting won't clear it. If the "Required mods" list shows I18N Everywhere as added, everything is fine and you can ignore the warning.
+- Still seeing untranslated text? Make sure "Load Language Packs" is on in I18N Everywhere's settings (the Advanced tab tells you if it isn't). Some mods also have their own language option and ignore translations while it's set to English; "Mod language follows the game" switches those for you.
+- Playing in English and translating mods written in other languages? Turn on "Enable overwrite" in I18N Everywhere.
+- Don't like a translation? Select the mod and click "Review", or edit the files in ModsData/AITranslateLocalization and click "Reload translations". Delete a mod's file to have it translated again.
+- Anything else: leave a comment with your game language and the mod involved. Logs/AITranslate.Mod.log helps a lot.
+
+**Privacy**
+
+Only mod UI text and its localization keys are sent, and only to the API address you enter. No saves, no account info, nothing personal, no other servers. Your API key stays in the settings file on your own PC.
+
+Works best with I18N Everywhere (set as a dependency). Without it, translations are written straight into the game's dictionary.
+
+— MeroT
+
+---
+
+**让 mod 说你的语言。**
+
+AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设置页、工具面板、提示、资产名称和描述，然后用 DeepSeek 或其他兼容 OpenAI 的接口翻译。每句只翻一次，存下来，马上在游戏里生效。
+
+**你会得到**
+
+- **mod 的设置页和工具面板变成中文**。截图里的停车场工具就是翻译前后的样子。
+- **资产有名字、有介绍**。没有描述的资产会自动写一段简介，名字只是一串随机编号的资产会起个正经名字。不瞎编，不会凭空写数字或地区。
+- **看得懂的 mod 列表**。选项菜单里显示成「推土机增强 (Better Bulldozer)」这样；其他地方的 mod 名、工具名都保持原样。
+- **补上漏翻的英文**。官方或 mod 自带译文里漏掉的英文会被补翻，品牌名、人名照样保留。
+- **装完不用管**。新装或更新的 mod 会在后台自动翻译。
+- **翻得像游戏原生的**。沿用游戏自己的术语和官方建筑命名格式（「欧洲低层住宅 01 - L1 2x2」），并检查 `{0}`、`%s`、`&lt;b&gt;` 这类占位符，不会把界面弄坏。可选 AI 审校，给每条打分、重写不好的，审过就定稿。
+- **不卡游戏**。检测分帧进行，放在后台做。
+
+已有的翻译永远优先。mod 作者自带的、游戏官方的、I18N Everywhere 社区翻好的都不会被覆盖，它只补缺的部分。
+
+关于语言：我主要用简体中文在玩和测试。其他语言走的是同一套流程，但实际用得少很多，如果你发现翻得别扭或者有漏的，欢迎在评论区告诉我。
+
+---
+
+**怎么用**
+
+1. 去 platform.deepseek.com 注册，创建一个 API Key（sk- 开头），充一点余额。
+2. 游戏里打开 选项 → AI Translate! → 设置，填入 Key，点「测试连接」。看到「连接成功」和一句示例译文就好了。
+3. 切到「翻译」页，点「翻译全部」，然后去玩就行。进度在概况里，每一批的结果在「日志」页，翻好的立刻生效。
+
+之后再装新 mod 不用管，默认会在后台自己翻好。
+
+**设置页怎么看**
+
+「翻译」页上面是概况：还剩什么、正在做什么。下面的按钮只有在有活要干的时候才出现。想单独处理某个 mod，就在「单个 mod」里搜（中文名、缩写、拼错都能搜到），选中后用它对应的按钮。
+
+「设置」页是 API 信息和自动选项：自动翻译新 mod、翻译后 AI 审校、翻译后补全描述默认开着；进游戏时翻译全部默认关着。「高级」页可以给 AI 加额外要求（比如「Lane 一律译成车道」），调每批条数和同时请求数，一般用不上。
+
+**要花多少钱**
+
+钱直接付给 API 服务商，这个 mod 免费。大部分 mod 只有几十到几百条文本，大型资产包可能上千条。会发大量请求的按钮都会先确认，自动翻译也会跳过超过 1500 条的 mod。AI 审校大约多花一半，不需要可以关掉。
+
+**遇到问题**
+
+- mod 页面提示「此 Mod 缺少依赖项目」，但下面的「需要 MOD」里 I18n Everywhere 明明显示「已添加」：这是游戏内 Paradox Mods 页面自己的显示问题，只要订阅了声明过依赖的 mod 就会出现，跟依赖装没装无关，重启也不会消失。只要「需要 MOD」里显示已添加，就一切正常，可以忽略这个提示。
+- 还有英文：看看 I18N Everywhere 设置里的「Load Language Packs」开没开（没开的话「高级」页会提示）。有些 mod 自带语言选项，选 English 时不显示译文，「mod 语言跟随游戏」会帮你改过来。
+- 用英文玩，想把其他语言写的 mod 翻成英文：在 I18N Everywhere 里打开「Enable overwrite」。
+- 某句翻得不满意：选中那个 mod 点「AI 审校」，或者直接改 ModsData/AITranslateLocalization 里的文件，再点「重新加载译文」。删掉某个 mod 的文件，它就会重新翻译。
+- 其他问题欢迎留言，写上游戏语言和相关的 mod，能附上 Logs/AITranslate.Mod.log 就更好了。
+
+**隐私**
+
+发出去的只有 mod 的界面文本和对应的 key，而且只发到你自己填的 API 地址。存档、账号、个人信息一概不发，也不连其他服务器。API Key 只存在你自己电脑上的设置文件里。
+
+推荐搭配 I18N Everywhere（已设为依赖）。不装也能用，译文会直接写进游戏词典。
+
+—— MeroT
+	</LongDescription>
+	<Thumbnail Value="Properties/Thumbnail.png" />
+	<Screenshot Value="Properties/Screenshots/00_cover.jpg" />
+	<Screenshot Value="Properties/Screenshots/01_mod_panel.jpg" />
+	<Screenshot Value="Properties/Screenshots/02_asset.jpg" />
+	<Screenshot Value="Properties/Screenshots/03_list_log.jpg" />
+	<Tag Value="Code Mod" />
+	<ModVersion Value="1.0.1" />
+	<GameVersion Value="1.6.*" />
+	<!--I18N Everywhere（推荐依赖：译文以它的语言包格式保存）-->
+	<Dependency Id="75426" />
+	<ChangeLog Value="Fix mixed text: leftover mod names, [tags] and file paths no longer count as untranslated English; rewrites are kept only if they actually remove English, and earlier rewrites that only reworded a sentence are rolled back. Anything already checked is never sent again. The mod no longer rewrites its own interface. Scanning no longer causes a short hitch when it finishes. / 修正混杂：mod 名、[标签]、文件路径不再算作漏翻的英文；只保留真正减少了英文的改写，之前只是换说法的改写会自动撤回；检查过的不再重复发送；不再改写本 mod 自己的界面。检测结束时不再短暂卡顿。" />
+	<!--Public / Private / Unlisted-->
+	<AccessLevel Value="Public" />
+</Publish>

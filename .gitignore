@@ -1,0 +1,14 @@
+# 编译输出
+bin/
+obj/
+Tests/bin/
+Tests/obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 截图助手的临时截图
+bin/Captures/
