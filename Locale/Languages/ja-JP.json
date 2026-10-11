@@ -1,7 +1,9 @@
-{
+﻿{
   "DESC:ApiKey": "platform.deepseek.com で作成します（sk- で始まります）。この PC にのみ保存されます。",
   "DESC:ApiUrl": "DeepSeek ならそのままで構いません。ほかの OpenAI 互換サービスを使う場合は、その URL を入力してください。",
   "DESC:AutoDescribe": "翻訳後、建設メニューのアセットのうち説明がないものに説明文を作成します。",
+  "OPT:IncludeRoadBuilderRoads": "Road Builderの道路を含める",
+  "DESC:IncludeRoadBuilderRoads": "Road Builderで作成した道路を翻訳・説明します。名前が翻訳され、短い説明が自動生成されます。",
   "DESC:AutoReview": "各バッチの後、AI が結果を採点し、評価の低い訳を書き直します。API 使用量が約 1.5 倍になります。",
   "DESC:AutoTranslateNewMods": "MOD のインストールや更新後に、バックグラウンドで翻訳します。",
   "DESC:AutoTranslateOnStartup": "ゲームを起動するたびに、以前から入っているものも含め、未翻訳の MOD をすべて翻訳します。",

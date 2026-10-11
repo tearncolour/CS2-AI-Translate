@@ -1,7 +1,9 @@
-{
+﻿{
   "DESC:ApiKey": "Auf platform.deepseek.com erstellen (beginnt mit sk-). Wird nur auf diesem Computer gespeichert.",
   "DESC:ApiUrl": "Für DeepSeek unverändert lassen. Für einen anderen OpenAI-kompatiblen Dienst dessen URL eingeben.",
   "DESC:AutoDescribe": "Nach dem Übersetzen Beschreibungen für Assets im Baumenü erstellen, die keine haben.",
+  "OPT:IncludeRoadBuilderRoads": "Road-Builder-Straßen einbeziehen",
+  "DESC:IncludeRoadBuilderRoads": "Übersetzt und beschreibt Straßen, die mit Road Builder erstellt wurden. Namen werden übersetzt und eine kurze Beschreibung wird automatisch erstellt.",
   "DESC:AutoReview": "Nach jedem Stapel bewertet die KI die Ergebnisse und schreibt schwache neu. Erhöht die API-Nutzung um etwa die Hälfte.",
   "DESC:AutoTranslateNewMods": "Mods nach der Installation oder einem Update im Hintergrund übersetzen.",
   "DESC:AutoTranslateOnStartup": "Bei jedem Spielstart alle noch nicht übersetzten Mods übersetzen, auch ältere.",

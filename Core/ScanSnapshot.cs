@@ -2,14 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Colossal;
 using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
+using Colossal.PSI.Environment;
 using Game.Modding;
 using Game.Prefabs;
 using Game.SceneFlow;
+using Newtonsoft.Json.Linq;
 
 namespace AITranslate.Core
 {
@@ -105,6 +108,9 @@ namespace AITranslate.Core
 
         /// <summary>运行环境已稳定（I18N 已加载完，或已确定没有 I18N）。</summary>
         public bool Settled;
+
+        /// <summary>Road Builder 生成的道路/小路：prefab 名（GUID-SteamID）→ 用户在 Road Builder 里起的名字。</summary>
+        public Dictionary<string, string> RoadBuilderNames = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public long CaptureMs;
         public int CaptureFrames;
@@ -272,6 +278,45 @@ namespace AITranslate.Core
             if (i18nDict != null)
             {
                 m_Snapshot.I18NCurrent = new Dictionary<string, string>(i18nDict, StringComparer.Ordinal);
+            }
+            // Road Builder：读取用户生成的道路名称（prefab 名是 GUID-SteamID，真正的名字在 JSON 里）。
+            if (Mod.Setting?.IncludeRoadBuilderRoads == true)
+            {
+                LoadRoadBuilderNames(m_Snapshot.RoadBuilderNames);
+            }
+        }
+
+        private static void LoadRoadBuilderNames(Dictionary<string, string> names)
+        {
+            try
+            {
+                string dir = Path.Combine(EnvPath.kUserDataPath, "ModsData", "RoadBuilder");
+                if (!Directory.Exists(dir))
+                {
+                    return;
+                }
+                foreach (string file in Directory.GetFiles(dir, "*.json", SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        string id = Path.GetFileNameWithoutExtension(file);
+                        string json = File.ReadAllText(file, System.Text.Encoding.UTF8);
+                        var obj = JObject.Parse(json);
+                        string roadName = (string)obj["Name"];
+                        if (!string.IsNullOrWhiteSpace(roadName) && LanguageDetector.HasLetters(roadName))
+                        {
+                            names[id] = roadName.Trim();
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 单个文件损坏不影响整体。
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Mod.Log.Warn("LoadRoadBuilderNames failed: " + ex.Message);
             }
         }
 

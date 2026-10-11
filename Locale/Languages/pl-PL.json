@@ -1,7 +1,9 @@
-{
+﻿{
   "DESC:ApiKey": "Utwórz go na platform.deepseek.com (zaczyna się od sk-). Jest przechowywany tylko na tym komputerze.",
   "DESC:ApiUrl": "Dla DeepSeek zostaw bez zmian. Dla innej usługi zgodnej z OpenAI wpisz jej adres URL.",
   "DESC:AutoDescribe": "Po tłumaczeniu dopisz opisy obiektom z menu budowy, które ich nie mają.",
+  "OPT:IncludeRoadBuilderRoads": "Uwzględnij drogi Road Builder",
+  "DESC:IncludeRoadBuilderRoads": "Tłumaczy i opisuje drogi wygenerowane przez Road Builder. Nazwy są tłumaczone, a krótki opis jest generowany automatycznie.",
   "DESC:AutoReview": "Po każdej partii AI ocenia wyniki i poprawia słabe tłumaczenia. Zużycie API rośnie o około połowę.",
   "DESC:AutoTranslateNewMods": "Tłumacz mody w tle po ich instalacji lub aktualizacji.",
   "DESC:AutoTranslateOnStartup": "Przy każdym uruchomieniu gry tłumacz wszystkie jeszcze nieprzetłumaczone mody, także starsze.",

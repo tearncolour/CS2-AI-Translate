@@ -138,6 +138,10 @@ namespace AITranslate.Core
         /// <summary>本 mod 自身界面文本的分组键。</summary>
         internal const string kSelfKey = "self_AITranslate";
 
+        /// <summary>Road Builder 生成道路的分组键。</summary>
+        private const string kRoadBuilderKey = "mod_RoadBuilder";
+        private const string kRoadBuilderDisplayName = "Road Builder";
+
         // Options.SECTION[Asm.Ns.Mod] 这类标准 key 中的程序集名，或 "ParkingLotTool.xxx" 这类以程序集名开头的私有 key。
         private static readonly Regex s_KeyOwner = new Regex(@"\[([A-Za-z_][A-Za-z0-9_]*)\.|^([A-Za-z_][A-Za-z0-9_]*)\.", RegexOptions.Compiled);
 
@@ -1011,6 +1015,7 @@ namespace AITranslate.Core
             var i18nDict = m_Snapshot.I18NCurrent;
             var ours = store.GetAllTranslations(result.Locale);
             var groups = store.TranslationGroups(result.Locale);
+            var rbNames = m_Snapshot.RoadBuilderNames;
             bool groupsHave(string key) => groups.TryGetValue(key, out var g) && g != TranslationStore.FileNameFor(kGameKey);
 
             // 某个 key 是否已有“别人提供的”文本（游戏/mod 自带、I18N 或其他语言包，不算本 mod 写入的）。
@@ -1046,14 +1051,32 @@ namespace AITranslate.Core
                 string descKey = (prefab.IsUpgrade ? "Assets.UPGRADE_DESCRIPTION[" : "Assets.DESCRIPTION[") + prefab.Name + "]";
                 Owner owner = OwnerByPath(prefab.AssetPath) ?? new Owner { Key = "assets_unnamed", Name = "Unnamed assets" };
 
+                // Road Builder 生成的道路：prefab 名是 GUID-SteamID，IsMachineIdentifier=true。
+                // 从 snapshot 里查用户起的名字，归到专属分组，避免落入 "assets_unnamed"。
+                rbNames.TryGetValue(prefab.Name, out var rbDisplayName);
+                bool isRbRoad = rbDisplayName != null;
+                if (isRbRoad)
+                {
+                    owner = new Owner { Key = kRoadBuilderKey, Name = kRoadBuilderDisplayName };
+                }
+
                 // 名称：游戏词典（含回退英文）或其他来源都没有时，用内部名补一个可翻译的名称。
                 // 内部 ID（GUID、哈希、Steam 用户号）不是名字，拆开也没有意义，跳过。
                 // 已在别的分组里有译文的（例如上次由资产导入工具提供了名字），不再另起名字重复翻译。
                 bool translatedElsewhere = groups.TryGetValue(titleKey, out var titleGroup) && titleGroup != TranslationStore.FileNameFor(owner.Key);
-                if (!HasForeign(titleKey) && !TextRules.IsMachineIdentifier(prefab.Name) && !translatedElsewhere)
+                if (!HasForeign(titleKey) && !translatedElsewhere)
                 {
-                    Merge(result, owner, new Dictionary<string, string> { [titleKey] = HumanizePrefabName(prefab.Name) }, overwrite: false);
-                    count++;
+                    if (isRbRoad)
+                    {
+                        // RB 道路：把用户起的名字（英文）注册为可翻译的名称。
+                        Merge(result, owner, new Dictionary<string, string> { [titleKey] = rbDisplayName }, overwrite: false);
+                        count++;
+                    }
+                    else if (!TextRules.IsMachineIdentifier(prefab.Name))
+                    {
+                        Merge(result, owner, new Dictionary<string, string> { [titleKey] = HumanizePrefabName(prefab.Name) }, overwrite: false);
+                        count++;
+                    }
                 }
 
                 // 描述：只处理出现在建造菜单里的资产（玩家会在提示框里看到描述）。
@@ -1062,7 +1085,9 @@ namespace AITranslate.Core
                     continue;
                 }
                 // 只有随机编号作名字、且还没起过名的资产：起名（没有描述时顺带写描述）。
-                bool needsName = TextRules.IsMachineIdentifier(prefab.Name) && !HasForeign(titleKey) && !ours.ContainsKey(titleKey);
+                // Road Builder 道路也算：用户的名字是英文，需要翻译+写描述。
+                bool needsName = !HasForeign(titleKey) && !ours.ContainsKey(titleKey)
+                    && (isRbRoad || TextRules.IsMachineIdentifier(prefab.Name));
                 bool hasOwnDescription = HasForeign(descKey);
                 if (hasOwnDescription && !needsName)
                 {

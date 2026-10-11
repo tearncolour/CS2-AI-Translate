@@ -1,7 +1,9 @@
-{
+﻿{
   "DESC:ApiKey": "在 platform.deepseek.com 建立，以 sk- 開頭。只儲存在這台電腦上。",
   "DESC:ApiUrl": "使用 DeepSeek 不必修改。改用其他與 OpenAI 相容的服務時，填入它的網址。",
   "DESC:AutoDescribe": "翻譯完成後，為建造選單中沒有描述的資產撰寫簡介。",
+  "OPT:IncludeRoadBuilderRoads": "包含 Road Builder 道路",
+  "DESC:IncludeRoadBuilderRoads": "翻譯及描述 Road Builder 生成的道路。道路名稱會被翻譯，並自動生成一句描述。",
   "DESC:AutoReview": "每翻完一批，讓 AI 評分並改寫低分譯文。API 用量約增加一半。",
   "DESC:AutoTranslateNewMods": "安裝或更新模組後，在背景自動翻譯。",
   "DESC:AutoTranslateOnStartup": "每次進入遊戲後，自動翻譯所有尚未翻譯的模組，包括以前安裝的。",
