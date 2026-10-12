@@ -329,6 +329,9 @@ namespace AITranslate
         public bool AutoDescribe { get; set; }
 
         [SettingsUISection(kSettingsTab, kAutoGroup)]
+        public bool IncludeDlcContent { get; set; }
+
+        [SettingsUISection(kSettingsTab, kAutoGroup)]
         public bool IncludeRoadBuilderRoads { get; set; }
 
         [SettingsUISection(kSettingsTab, kAutoGroup)]

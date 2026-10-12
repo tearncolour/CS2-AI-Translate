@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "Utwórz go na platform.deepseek.com (zaczyna się od sk-). Jest przechowywany tylko na tym komputerze.",
   "DESC:ApiUrl": "Dla DeepSeek zostaw bez zmian. Dla innej usługi zgodnej z OpenAI wpisz jej adres URL.",
   "DESC:AutoDescribe": "Po tłumaczeniu dopisz opisy obiektom z menu budowy, które ich nie mają.",
-  "OPT:IncludeRoadBuilderRoads": "Uwzględnij drogi Road Builder",
-  "DESC:IncludeRoadBuilderRoads": "Tłumaczy i opisuje drogi wygenerowane przez Road Builder. Nazwy są tłumaczone, a krótki opis jest generowany automatycznie.",
   "DESC:AutoReview": "Po każdej partii AI ocenia wyniki i poprawia słabe tłumaczenia. Zużycie API rośnie o około połowę.",
   "DESC:AutoTranslateNewMods": "Tłumacz mody w tle po ich instalacji lub aktualizacji.",
   "DESC:AutoTranslateOnStartup": "Przy każdym uruchomieniu gry tłumacz wszystkie jeszcze nieprzetłumaczone mody, także starsze.",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "Przetłumacz angielskie słowa pozostawione w oficjalnych i dołączonych tłumaczeniach. Marki i nazwy własne zostają.",
   "DESC:FixMixedSelectedMod": "Przetłumacz angielski tekst pozostały we własnych tłumaczeniach tego moda (lub gry podstawowej). Poprawki są zapisywane osobno.",
   "DESC:FollowGameLanguageOptions": "Niektóre mody ignorują tłumaczenia, gdy ich własna opcja języka to angielski; ta opcja przełącza ją na język gry.",
+  "DESC:IncludeDlcContent": "Tłumaczy też posiadane DLC i Creator Packi, każdy wymieniony osobno: nazwy i opisy dostępne tylko po angielsku są tłumaczone, a obiekty bez opisu otrzymują opis. Oficjalne tłumaczenia pozostają bez zmian.",
+  "DESC:IncludeRoadBuilderRoads": "Tłumaczy i opisuje drogi wygenerowane przez Road Builder. Nazwy są tłumaczone, a krótki opis jest generowany automatycznie.",
   "DESC:LogShowSamples": "Pokazuj pod każdą partią jedną lub dwie próbki oryginału i tłumaczenia.",
   "DESC:ModelName": "Dla DeepSeek wystarczy deepseek-flash.",
   "DESC:OpenTranslationFolder": "Tłumaczenia można edytować ręcznie; usuń plik, aby przetłumaczyć dany mod od nowa.",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "Popraw mieszany tekst",
   "OPT:FixMixedSelectedMod": "Popraw mieszany tekst",
   "OPT:FollowGameLanguageOptions": "Język modów zgodny z grą",
+  "OPT:IncludeDlcContent": "Uwzględnij DLC i Creator Packi",
+  "OPT:IncludeRoadBuilderRoads": "Uwzględnij drogi Road Builder",
   "OPT:LogShowSamples": "Pokazuj próbki",
   "OPT:ModelName": "Model",
   "OPT:OpenTranslationFolder": "Otwórz folder",

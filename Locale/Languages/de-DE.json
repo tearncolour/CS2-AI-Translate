@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "Auf platform.deepseek.com erstellen (beginnt mit sk-). Wird nur auf diesem Computer gespeichert.",
   "DESC:ApiUrl": "Für DeepSeek unverändert lassen. Für einen anderen OpenAI-kompatiblen Dienst dessen URL eingeben.",
   "DESC:AutoDescribe": "Nach dem Übersetzen Beschreibungen für Assets im Baumenü erstellen, die keine haben.",
-  "OPT:IncludeRoadBuilderRoads": "Road-Builder-Straßen einbeziehen",
-  "DESC:IncludeRoadBuilderRoads": "Übersetzt und beschreibt Straßen, die mit Road Builder erstellt wurden. Namen werden übersetzt und eine kurze Beschreibung wird automatisch erstellt.",
   "DESC:AutoReview": "Nach jedem Stapel bewertet die KI die Ergebnisse und schreibt schwache neu. Erhöht die API-Nutzung um etwa die Hälfte.",
   "DESC:AutoTranslateNewMods": "Mods nach der Installation oder einem Update im Hintergrund übersetzen.",
   "DESC:AutoTranslateOnStartup": "Bei jedem Spielstart alle noch nicht übersetzten Mods übersetzen, auch ältere.",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "Englische Reste in offiziellen und mitgelieferten Übersetzungen übersetzen. Marken und Namen bleiben erhalten.",
   "DESC:FixMixedSelectedMod": "Englische Reste in den eigenen Übersetzungen dieser Mod (oder des Basisspiels) übersetzen. Korrekturen werden separat gespeichert.",
   "DESC:FollowGameLanguageOptions": "Manche Mods ignorieren Übersetzungen, wenn ihre eigene Sprachoption auf Englisch steht; dies stellt sie auf die Spielsprache um.",
+  "DESC:IncludeDlcContent": "Übersetzt auch deine DLCs und Creator Packs, jeweils einzeln aufgeführt: Nur auf Englisch vorhandene Namen und Beschreibungen werden übersetzt, Assets ohne Beschreibung erhalten eine. Offizielle Übersetzungen bleiben unverändert.",
+  "DESC:IncludeRoadBuilderRoads": "Übersetzt und beschreibt Straßen, die mit Road Builder erstellt wurden. Namen werden übersetzt und eine kurze Beschreibung wird automatisch erstellt.",
   "DESC:LogShowSamples": "Unter jedem Stapel ein oder zwei Beispiele aus Original und Übersetzung anzeigen.",
   "DESC:ModelName": "Für DeepSeek funktioniert deepseek-flash.",
   "DESC:OpenTranslationFolder": "Übersetzungen lassen sich von Hand bearbeiten; eine Datei löschen, um die Mod neu zu übersetzen.",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "Mischtext korrigieren",
   "OPT:FixMixedSelectedMod": "Mischtext korrigieren",
   "OPT:FollowGameLanguageOptions": "Mod-Sprache folgt dem Spiel",
+  "OPT:IncludeDlcContent": "DLCs und Creator Packs einbeziehen",
+  "OPT:IncludeRoadBuilderRoads": "Road-Builder-Straßen einbeziehen",
   "OPT:LogShowSamples": "Beispiele anzeigen",
   "OPT:ModelName": "Modell",
   "OPT:OpenTranslationFolder": "Ordner öffnen",

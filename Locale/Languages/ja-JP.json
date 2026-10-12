@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "platform.deepseek.com で作成します（sk- で始まります）。この PC にのみ保存されます。",
   "DESC:ApiUrl": "DeepSeek ならそのままで構いません。ほかの OpenAI 互換サービスを使う場合は、その URL を入力してください。",
   "DESC:AutoDescribe": "翻訳後、建設メニューのアセットのうち説明がないものに説明文を作成します。",
-  "OPT:IncludeRoadBuilderRoads": "Road Builderの道路を含める",
-  "DESC:IncludeRoadBuilderRoads": "Road Builderで作成した道路を翻訳・説明します。名前が翻訳され、短い説明が自動生成されます。",
   "DESC:AutoReview": "各バッチの後、AI が結果を採点し、評価の低い訳を書き直します。API 使用量が約 1.5 倍になります。",
   "DESC:AutoTranslateNewMods": "MOD のインストールや更新後に、バックグラウンドで翻訳します。",
   "DESC:AutoTranslateOnStartup": "ゲームを起動するたびに、以前から入っているものも含め、未翻訳の MOD をすべて翻訳します。",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "公式翻訳や同梱翻訳に残っている英単語を翻訳します。ブランド名や人名はそのまま残します。",
   "DESC:FixMixedSelectedMod": "この MOD（またはベースゲーム）自体の翻訳に残っている英語を翻訳します。修正内容は別に保存されます。",
   "DESC:FollowGameLanguageOptions": "MOD 独自の言語設定が English だと翻訳を無視する MOD があります。オンにすると、その設定をゲームの言語に合わせます。",
+  "DESC:IncludeDlcContent": "所有しているDLCとクリエイターパックも翻訳対象にし、パックごとに一覧表示します。英語しかない名前と説明を翻訳し、説明のないアセットには説明を書きます。公式の翻訳はそのままです。",
+  "DESC:IncludeRoadBuilderRoads": "Road Builderで作成した道路を翻訳・説明します。名前が翻訳され、短い説明が自動生成されます。",
   "DESC:LogShowSamples": "各バッチの下に、原文と訳文のサンプルを 1～2 件表示します。",
   "DESC:ModelName": "DeepSeek なら deepseek-flash で動作します。",
   "DESC:OpenTranslationFolder": "翻訳は手動で編集できます。ファイルを削除すると、その MOD を再翻訳します。",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "混在テキストを修正",
   "OPT:FixMixedSelectedMod": "混在テキストを修正",
   "OPT:FollowGameLanguageOptions": "MOD の言語をゲームに合わせる",
+  "OPT:IncludeDlcContent": "DLCとクリエイターパックを含める",
+  "OPT:IncludeRoadBuilderRoads": "Road Builderの道路を含める",
   "OPT:LogShowSamples": "サンプルを表示",
   "OPT:ModelName": "モデル",
   "OPT:OpenTranslationFolder": "フォルダーを開く",

@@ -21,6 +21,7 @@ AI Translate! finds every bit of mod text that isn't in your game language yet: 
 - **A mod list you can read.** The Options menu shows each mod as "Translated name (Original Name)". Everywhere else, mod and tool names are kept as they are.
 - **Leftover English fixed.** Official or bundled translations that left English words behind get patched. Brand and personal names stay.
 - **Set and forget.** Newly installed or updated mods are translated in the background.
+- **DLC, creator packs and Road Builder roads, if you like.** Turn them on and each is listed like any other mod: English-only names and descriptions get translated, and assets without a description get one.
 - **It sounds like the game.** It follows the game's own terms and the official building-name format ("EU Residential Low 01 - L1 2x2"), and checks placeholders like `{0}`, `%s` and `&lt;b&gt;` so nothing breaks. An optional AI review scores each entry and rewrites weak ones, once.
 - **No stutter.** Scanning is split across frames and done in the background.
 - **The settings page speaks your language too.** It comes in all 12 game languages and switches with the game; other languages are translated automatically once you enter an API key.
@@ -43,7 +44,7 @@ From then on, new mods are handled in the background (on by default).
 
 The Translate tab starts with an overview of what's left and what's running. Its buttons only appear when there's work for them. To handle one mod, search for it under "One mod" (translated names, initials and typos all work), pick it, and use the buttons that apply.
 
-The Settings tab holds your API details and the automatic options: translate new mods, review after translating and describe assets after translating are on; translate everything on startup is off. The Advanced tab lets you give the AI extra instructions (e.g. "always translate Lane as …") and adjust batch size and parallel requests. Most people never need it.
+The Settings tab holds your API details and the automatic options: translate new mods, review after translating and describe assets after translating are on; translate everything on startup is off. Two more options widen what gets translated and are off by default: the DLC and creator packs you own, and the roads you made with Road Builder. The Advanced tab lets you give the AI extra instructions (e.g. "always translate Lane as …") and adjust batch size and parallel requests. Most people never need it.
 
 **What it costs**
 
@@ -51,6 +52,7 @@ You pay your API provider directly; the mod is free. Most mods have a few dozen 
 
 **If something's not right**
 
+- A mod isn't translated at all? Some mods and asset packs only load their text or assets once a city is open, so they can't be found from the main menu. Load a save, click "Rescan" on the Advanced tab, then translate again.
 - Still seeing untranslated text? Make sure "Load Language Packs" is on in I18N Everywhere's settings (the Advanced tab tells you if it isn't). Some mods also have their own language option and ignore translations while it's set to English; "Mod language follows the game" switches those for you.
 - Playing in English and translating mods written in other languages? Turn on "Enable overwrite" in I18N Everywhere.
 - Don't like a translation? Select the mod and click "Review", or edit the files in ModsData/AITranslateLocalization and click "Reload translations". Delete a mod's file to have it translated again.
@@ -79,6 +81,7 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 - **看得懂的 mod 列表**。选项菜单里显示成「推土机增强 (Better Bulldozer)」这样；其他地方的 mod 名、工具名都保持原样。
 - **补上漏翻的英文**。官方或 mod 自带译文里漏掉的英文会被补翻，品牌名、人名照样保留。
 - **装完不用管**。新装或更新的 mod 会在后台自动翻译。
+- **DLC、创作者包和 Road Builder 道路也能翻（可选）**。打开后它们和普通 mod 一样单独列出：只有英文的名称和描述会被翻译，没有描述的资产会补一段简介。
 - **翻得像游戏原生的**。沿用游戏自己的术语和官方建筑命名格式（「欧洲低层住宅 01 - L1 2x2」），并检查 `{0}`、`%s`、`&lt;b&gt;` 这类占位符，不会把界面弄坏。可选 AI 审校，给每条打分、重写不好的，审过就定稿。
 - **不卡游戏**。检测分帧进行，放在后台做。
 - **设置页也说你的语言**。预置游戏的全部 12 种语言，跟着游戏语言切换；其他语言填好 API Key 后自动翻译。
@@ -101,7 +104,7 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 
 「翻译」页上面是概况：还剩什么、正在做什么。下面的按钮只有在有活要干的时候才出现。想单独处理某个 mod，就在「单个 mod」里搜（中文名、缩写、拼错都能搜到），选中后用它对应的按钮。
 
-「设置」页是 API 信息和自动选项：自动翻译新 mod、翻译后 AI 审校、翻译后补全描述默认开着；进游戏时翻译全部默认关着。「高级」页可以给 AI 加额外要求（比如「Lane 一律译成车道」），调每批条数和同时请求数，一般用不上。
+「设置」页是 API 信息和自动选项：自动翻译新 mod、翻译后 AI 审校、翻译后补全描述默认开着；进游戏时翻译全部默认关着。另有两个扩大翻译范围的选项，默认关着：你拥有的 DLC 和创作者包，以及你用 Road Builder 建的道路。「高级」页可以给 AI 加额外要求（比如「Lane 一律译成车道」），调每批条数和同时请求数，一般用不上。
 
 **要花多少钱**
 
@@ -109,6 +112,7 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 
 **遇到问题**
 
+- 某个 mod 完全没被翻译：有些 mod 和资产包要进入存档后才加载文本或资产，在主菜单检测不到。进入存档后，到「高级」页点「重新检测」，再翻译一次。
 - 还有英文：看看 I18N Everywhere 设置里的「Load Language Packs」开没开（没开的话「高级」页会提示）。有些 mod 自带语言选项，选 English 时不显示译文，「mod 语言跟随游戏」会帮你改过来。
 - 用英文玩，想把其他语言写的 mod 翻成英文：在 I18N Everywhere 里打开「Enable overwrite」。
 - 某句翻得不满意：选中那个 mod 点「AI 审校」，或者直接改 ModsData/AITranslateLocalization 里的文件，再点「重新加载译文」。删掉某个 mod 的文件，它就会重新翻译。
@@ -130,11 +134,11 @@ AI Translate! 会把 mod 里还不是你游戏语言的文字都找出来：设�
 	<Screenshot Value="Properties/Screenshots/02_asset.jpg" />
 	<Screenshot Value="Properties/Screenshots/03_list_log.jpg" />
 	<Tag Value="Code Mod" />
-	<ModVersion Value="1.0.2" />
+	<ModVersion Value="1.0.3" />
 	<GameVersion Value="1.6.*" />
 	<!--I18N Everywhere（推荐依赖：译文以它的语言包格式保存）-->
 	<Dependency Id="75426" />
-	<ChangeLog Value="The settings page now comes in all 12 game languages and switches with the game language, including the overview, progress and log. Other languages are translated automatically once an API key is set. The default model is now deepseek-flash (settings still on the old default are switched over). / 设置页预置游戏的全部 12 种语言，并随游戏语言切换（概况、进度、日志也一起切换）；其他语言填好 API Key 后自动翻译。默认模型改为 deepseek-flash（仍是旧默认值的设置会自动换过去）。" />
+	<ChangeLog Value="New optional settings (off by default): include the DLC and creator packs you own, and include roads made with Road Builder. Each is listed on its own: English-only names and descriptions are translated, assets without a description get one. Turning either option on or off rescans automatically. Note: some mods only load their text once a city is open; if a mod isn't translated, load a save and click Rescan. / 新增两个可选设置（默认关闭）：包含你拥有的 DLC 和创作者包、包含 Road Builder 建的道路。它们各自单独列出：只有英文的名称和描述会被翻译，没有描述的资产会补写简介。开关后会自动重新检测。注意：有些 mod 进入存档后才加载文本，如果某个 mod 没被翻译，请进入存档后点「重新检测」。" />
 	<!--Public / Private / Unlisted-->
 	<AccessLevel Value="Public" />
 	<ExternalLink Type="github" Url="https://github.com/tearncolour/CS2-AI-Translate" />

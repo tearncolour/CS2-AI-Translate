@@ -21,6 +21,9 @@ AI Translate! finds every bit of mod text that isn't in your game language yet (
 - Patches official/bundled translations that left English words behind (only if the change really removes English).
 - Scanning is time-sliced and runs in the background, so the game doesn't freeze.
 - The settings page itself comes in all 12 game languages; other languages are translated automatically once an API key is set.
+- Optional: the DLC and creator packs you own, and roads made with Road Builder, can be included too (off by default).
+
+Some mods and asset packs only load their text once a city is open. If a mod isn't translated, load a save, click *Rescan* on the Advanced tab and translate again.
 
 Simplified Chinese is the most tested language. Other languages use the same pipeline but have seen less real use, so feedback is very welcome.
 
@@ -38,6 +41,9 @@ AI Translate! 会找出 mod 里还不是你游戏语言的文字（设置页、�
 - 修正官方或自带译文里漏翻的英文（只采用真正减少了英文的改写）。
 - 检测分帧、放在后台进行，不卡游戏。
 - 设置页本身预置游戏的全部 12 种语言；其他语言填好 API Key 后自动翻译。
+- 可选：你拥有的 DLC 和创作者包、Road Builder 建的道路也能加入翻译范围（默认关闭）。
+
+有些 mod 和资产包要进入存档后才加载文本。如果某个 mod 没被翻译，请进入存档，到「高级」页点「重新检测」，再翻译一次。
 
 简体中文测试得最多，其他语言走同一套流程但实际使用较少，欢迎反馈。
 

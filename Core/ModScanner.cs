@@ -142,6 +142,25 @@ namespace AITranslate.Core
         private const string kRoadBuilderKey = "mod_RoadBuilder";
         private const string kRoadBuilderDisplayName = "Road Builder";
 
+        /// <summary>DLC/创作者包分组键的前缀（后接 ContentPrefab 名）。</summary>
+        private const string kContentPackPrefix = "dlc_";
+
+        internal static bool IsContentPack(string key) => key != null && key.StartsWith(kContentPackPrefix, StringComparison.Ordinal);
+
+        private readonly Dictionary<string, Owner> m_ContentPackOwners = new Dictionary<string, Owner>(StringComparer.Ordinal);
+
+        /// <summary>DLC/创作者包的分组，名称用游戏里显示的包名（如 "Creator Pack: Mediterranean Heritage"），没有时由内部名拆出。</summary>
+        private Owner ContentPackOwner(string pack)
+        {
+            if (!m_ContentPackOwners.TryGetValue(pack, out var owner))
+            {
+                string nameKey = "Assets.NAME[" + pack + "]";
+                string name = TryGetDisplay(nameKey, out var shown) && !string.IsNullOrWhiteSpace(shown) ? shown.Trim() : HumanizePrefabName(pack);
+                m_ContentPackOwners[pack] = owner = new Owner { Key = kContentPackPrefix + pack, Name = name };
+            }
+            return owner;
+        }
+
         // Options.SECTION[Asm.Ns.Mod] 这类标准 key 中的程序集名，或 "ParkingLotTool.xxx" 这类以程序集名开头的私有 key。
         private static readonly Regex s_KeyOwner = new Regex(@"\[([A-Za-z_][A-Za-z0-9_]*)\.|^([A-Za-z_][A-Za-z0-9_]*)\.", RegexOptions.Compiled);
 
@@ -1026,30 +1045,61 @@ namespace AITranslate.Core
                     || (i18nDict != null && i18nDict.TryGetValue(key, out var other) && !mine(other));
             }
 
+            // 官方文本只有英文（当前语言缺这条，游戏回退显示英文）。
+            bool EnglishOnly(string key, out string english) =>
+                fallback.TryGetValue(key, out english) && !string.IsNullOrWhiteSpace(english)
+                && !(active.TryGetRaw(key, out _, out bool isFallback) && !isFallback);
+
             int count = 0;
             foreach (var prefab in m_Snapshot.Prefabs)
             {
+                Owner owner;
+                bool templatedBuilding = false;
                 if (prefab.IsBuiltin)
                 {
                     // 游戏本体/DLC：只给按区域包命名、却没有任何名称的可成长建筑补名字（如地中海遗产包的 CCP5_ResidentialMediumLeft01_L5_3x2）。
+                    // 这类名字统一归在游戏分组，按官方建筑命名格式翻译。
                     string builtinTitle = "Assets.NAME[" + prefab.Name + "]";
-                    if (prefab.IsSpawnableBuilding && MatchBuildingTemplate(prefab.Name) != null
-                        && !HasForeign(builtinTitle) && !groupsHave(builtinTitle))
+                    templatedBuilding = prefab.IsSpawnableBuilding && MatchBuildingTemplate(prefab.Name) != null;
+                    if (templatedBuilding && !HasForeign(builtinTitle) && !groupsHave(builtinTitle))
                     {
                         Merge(result, new Owner { Key = kGameKey, Name = "Cities: Skylines II" },
                             new Dictionary<string, string> { [builtinTitle] = HumanizePrefabName(prefab.Name) }, overwrite: false);
                         count++;
                     }
-                    continue;
+                    // 其余原版资产不处理；开启「包含 DLC 和创作者包」时，DLC/创作者包的资产按包分组，和 mod 资产一样补名称和描述。
+                    if (prefab.ContentPack == null)
+                    {
+                        continue;
+                    }
+                    owner = ContentPackOwner(prefab.ContentPack);
                 }
-                CountPrefab(prefab);
+                else
+                {
+                    owner = OwnerByPath(prefab.AssetPath);
+                }
+                CountPrefab(prefab, owner);
                 if (!prefab.IsCandidate)
                 {
                     continue;
                 }
                 string titleKey = (prefab.IsUpgrade ? "Assets.UPGRADE_NAME[" : "Assets.NAME[") + prefab.Name + "]";
                 string descKey = (prefab.IsUpgrade ? "Assets.UPGRADE_DESCRIPTION[" : "Assets.DESCRIPTION[") + prefab.Name + "]";
-                Owner owner = OwnerByPath(prefab.AssetPath) ?? new Owner { Key = "assets_unnamed", Name = "Unnamed assets" };
+                owner = owner ?? new Owner { Key = "assets_unnamed", Name = "Unnamed assets" };
+
+                // DLC/创作者包里官方只有英文的名称和描述：作为这个包的文本翻译（mod 的这类文本来自它自己的语言文件）。
+                if (prefab.ContentPack != null)
+                {
+                    var englishOnly = new Dictionary<string, string>(StringComparer.Ordinal);
+                    foreach (string key in new[] { titleKey, descKey })
+                    {
+                        if (EnglishOnly(key, out var english))
+                        {
+                            englishOnly[key] = english;
+                        }
+                    }
+                    Merge(result, owner, englishOnly, overwrite: false);
+                }
 
                 // Road Builder 生成的道路：prefab 名是 GUID-SteamID，IsMachineIdentifier=true。
                 // 从 snapshot 里查用户起的名字，归到专属分组，避免落入 "assets_unnamed"。
@@ -1064,7 +1114,7 @@ namespace AITranslate.Core
                 // 内部 ID（GUID、哈希、Steam 用户号）不是名字，拆开也没有意义，跳过。
                 // 已在别的分组里有译文的（例如上次由资产导入工具提供了名字），不再另起名字重复翻译。
                 bool translatedElsewhere = groups.TryGetValue(titleKey, out var titleGroup) && titleGroup != TranslationStore.FileNameFor(owner.Key);
-                if (!HasForeign(titleKey) && !translatedElsewhere)
+                if (!HasForeign(titleKey) && !translatedElsewhere && !templatedBuilding)
                 {
                     if (isRbRoad)
                     {
@@ -1150,14 +1200,9 @@ namespace AITranslate.Core
             }
         }
 
-        private void CountPrefab(PrefabSnapshot prefab)
+        private void CountPrefab(PrefabSnapshot prefab, Owner owner)
         {
-            if (prefab.Category == null)
-            {
-                return;
-            }
-            Owner owner = OwnerByPath(prefab.AssetPath);
-            if (owner == null)
+            if (prefab.Category == null || owner == null)
             {
                 return;
             }

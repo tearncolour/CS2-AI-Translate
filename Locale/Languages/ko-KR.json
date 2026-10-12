@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "platform.deepseek.com에서 만들 수 있습니다(sk-로 시작). 이 컴퓨터에만 저장됩니다.",
   "DESC:ApiUrl": "DeepSeek은 그대로 두면 됩니다. 다른 OpenAI 호환 서비스를 쓰려면 해당 URL을 입력하십시오.",
   "DESC:AutoDescribe": "번역 후, 건설 메뉴에서 설명이 없는 에셋에 설명을 작성합니다.",
-  "OPT:IncludeRoadBuilderRoads": "Road Builder 도로 포함",
-  "DESC:IncludeRoadBuilderRoads": "Road Builder로 생성된 도로를 번역하고 설명합니다. 이름이 번역되고 짧은 설명이 자동으로 생성됩니다.",
   "DESC:AutoReview": "배치마다 AI가 결과를 채점하고 점수가 낮은 번역을 다시 씁니다. API 사용량이 약 1.5배가 됩니다.",
   "DESC:AutoTranslateNewMods": "모드를 설치하거나 업데이트하면 백그라운드에서 번역합니다.",
   "DESC:AutoTranslateOnStartup": "게임을 시작할 때마다 예전에 설치한 모드를 포함해 아직 번역되지 않은 모든 모드를 번역합니다.",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "공식 번역과 기본 포함 번역에 남아 있는 영어 단어를 번역합니다. 브랜드와 이름은 유지합니다.",
   "DESC:FixMixedSelectedMod": "이 모드(또는 기본 게임) 자체 번역에 남아 있는 영어를 번역합니다. 수정 내용은 따로 저장됩니다.",
   "DESC:FollowGameLanguageOptions": "일부 모드는 자체 언어 옵션이 English이면 번역을 무시합니다. 켜면 해당 옵션을 게임 언어에 맞춥니다.",
+  "DESC:IncludeDlcContent": "보유한 DLC와 크리에이터 팩도 번역 대상에 넣고 팩마다 따로 표시합니다. 영어로만 된 이름과 설명을 번역하고, 설명이 없는 에셋에는 설명을 작성합니다. 공식 번역은 그대로 둡니다.",
+  "DESC:IncludeRoadBuilderRoads": "Road Builder로 생성된 도로를 번역하고 설명합니다. 이름이 번역되고 짧은 설명이 자동으로 생성됩니다.",
   "DESC:LogShowSamples": "각 배치 아래에 원문과 번역 예시를 한두 개 표시합니다.",
   "DESC:ModelName": "DeepSeek은 deepseek-flash를 사용하면 됩니다.",
   "DESC:OpenTranslationFolder": "번역은 직접 수정할 수 있습니다. 파일을 삭제하면 해당 모드를 다시 번역합니다.",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "혼합 텍스트 수정",
   "OPT:FixMixedSelectedMod": "혼합 텍스트 수정",
   "OPT:FollowGameLanguageOptions": "모드 언어를 게임에 맞춤",
+  "OPT:IncludeDlcContent": "DLC 및 크리에이터 팩 포함",
+  "OPT:IncludeRoadBuilderRoads": "Road Builder 도로 포함",
   "OPT:LogShowSamples": "예시 표시",
   "OPT:ModelName": "모델",
   "OPT:OpenTranslationFolder": "폴더 열기",

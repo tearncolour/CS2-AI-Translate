@@ -86,6 +86,9 @@ namespace AITranslate.Core
         public bool IsSpawnableBuilding;
         public bool IsBrand;
 
+        /// <summary>所属的 DLC/创作者包（ContentPrefab 名）。只在开启「包含 DLC 和创作者包」时采集，否则为 null。</summary>
+        public string ContentPack;
+
         /// <summary>写描述要用的资产信息（只给 mod 的建造菜单资产准备）。</summary>
         public AssetContext Context;
     }
@@ -247,9 +250,10 @@ namespace AITranslate.Core
                 prefabs = new List<PrefabBase>();
             }
             yield return true;
+            bool includeDlc = Mod.Setting?.IncludeDlcContent == true;
             for (int i = 0; i < prefabs.Count; i++)
             {
-                var snap = CapturePrefab(prefabs[i]);
+                var snap = CapturePrefab(prefabs[i], includeDlc);
                 if (snap != null)
                 {
                     m_Snapshot.Prefabs.Add(snap);
@@ -320,7 +324,7 @@ namespace AITranslate.Core
             }
         }
 
-        private static PrefabSnapshot CapturePrefab(PrefabBase prefab)
+        private PrefabSnapshot CapturePrefab(PrefabBase prefab, bool includeDlc)
         {
             try
             {
@@ -338,15 +342,23 @@ namespace AITranslate.Core
                 {
                     // 原版/DLC 只需要知道是不是可成长建筑（用来给没有名字的创作者包建筑补名）。
                     snap.IsSpawnableBuilding = prefab is BuildingPrefab && prefab.Has<SpawnableBuilding>();
-                    return snap;
+                    // 开启「包含 DLC 和创作者包」时，DLC/创作者包的资产和 mod 资产一样采集完整信息。
+                    snap.ContentPack = includeDlc ? DlcPackOf(prefab) : null;
+                    if (snap.ContentPack == null)
+                    {
+                        return snap;
+                    }
                 }
-                try
+                else
                 {
-                    snap.AssetPath = prefab.asset?.path;
-                }
-                catch (Exception)
-                {
-                    // 没有资产文件的预制件。
+                    try
+                    {
+                        snap.AssetPath = prefab.asset?.path;
+                    }
+                    catch (Exception)
+                    {
+                        // 没有资产文件的预制件。
+                    }
                 }
                 snap.Category = ModScanner.CategoryOf(prefab);
                 snap.HasUIObject = prefab.Has<UIObject>();
@@ -365,6 +377,35 @@ namespace AITranslate.Core
             {
                 return null; // 个别预制件异常不影响整体检测
             }
+        }
+
+        // ContentPrefab → 是否是已拥有的 DLC/创作者包。
+        private readonly Dictionary<ContentPrefab, bool> m_OwnedPacks = new Dictionary<ContentPrefab, bool>();
+
+        /// <summary>
+        /// 资产所属的 DLC/创作者包：ContentPrerequisite 指向的、需要 DLC 的 ContentPrefab 名（如 "MediterraneanHeritage"）。
+        /// 原版资产和没有拥有的 DLC 返回 null（没买的包不花 API）。
+        /// </summary>
+        private string DlcPackOf(PrefabBase prefab)
+        {
+            if (!prefab.TryGet<ContentPrerequisite>(out var prerequisite) || prerequisite.m_ContentPrerequisite == null)
+            {
+                return null;
+            }
+            var content = prerequisite.m_ContentPrerequisite;
+            if (!m_OwnedPacks.TryGetValue(content, out bool owned))
+            {
+                try
+                {
+                    owned = content.Has<DlcRequirement>() && content.IsAvailable();
+                }
+                catch (Exception)
+                {
+                    owned = false;
+                }
+                m_OwnedPacks[content] = owned;
+            }
+            return owned ? content.name : null;
         }
 
         /// <summary>复制游戏词典的原始条目（entries 直接读内部字典，不经过 I18N 的拦截）。</summary>

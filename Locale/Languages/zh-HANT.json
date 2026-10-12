@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "在 platform.deepseek.com 建立，以 sk- 開頭。只儲存在這台電腦上。",
   "DESC:ApiUrl": "使用 DeepSeek 不必修改。改用其他與 OpenAI 相容的服務時，填入它的網址。",
   "DESC:AutoDescribe": "翻譯完成後，為建造選單中沒有描述的資產撰寫簡介。",
-  "OPT:IncludeRoadBuilderRoads": "包含 Road Builder 道路",
-  "DESC:IncludeRoadBuilderRoads": "翻譯及描述 Road Builder 生成的道路。道路名稱會被翻譯，並自動生成一句描述。",
   "DESC:AutoReview": "每翻完一批，讓 AI 評分並改寫低分譯文。API 用量約增加一半。",
   "DESC:AutoTranslateNewMods": "安裝或更新模組後，在背景自動翻譯。",
   "DESC:AutoTranslateOnStartup": "每次進入遊戲後，自動翻譯所有尚未翻譯的模組，包括以前安裝的。",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "把遊戲本體、DLC 和模組內建譯文中未翻譯的英文翻譯出來。品牌名、人名保留不譯。",
   "DESC:FixMixedSelectedMod": "把這個模組（或遊戲本體）內建譯文中未翻譯的英文翻譯出來。修改另外儲存，不會更動原檔案。",
   "DESC:FollowGameLanguageOptions": "有些模組的語言選項設為 English 時不會顯示譯文；開啟後會自動改為跟隨遊戲。",
+  "DESC:IncludeDlcContent": "把你擁有的 DLC 與創作者包也納入翻譯範圍，每個包單獨列出：只有英文的名稱與描述會被翻譯，沒有描述的資產會補寫簡介。官方已有的譯文保持不變。",
+  "DESC:IncludeRoadBuilderRoads": "翻譯及描述 Road Builder 生成的道路。道路名稱會被翻譯，並自動生成一句描述。",
   "DESC:LogShowSamples": "在每批結果下方顯示一兩條原文和譯文。",
   "DESC:ModelName": "DeepSeek 使用 deepseek-flash 即可。",
   "DESC:OpenTranslationFolder": "譯文可以直接編輯；刪除某個檔案，對應的模組就會重新翻譯。",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "修正混雜",
   "OPT:FixMixedSelectedMod": "修正混雜",
   "OPT:FollowGameLanguageOptions": "模組語言跟隨遊戲",
+  "OPT:IncludeDlcContent": "包含 DLC 與創作者包",
+  "OPT:IncludeRoadBuilderRoads": "包含 Road Builder 道路",
   "OPT:LogShowSamples": "顯示範例",
   "OPT:ModelName": "模型",
   "OPT:OpenTranslationFolder": "開啟譯文資料夾",

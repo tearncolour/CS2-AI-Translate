@@ -1,9 +1,7 @@
-﻿{
+{
   "DESC:ApiKey": "Crie uma em platform.deepseek.com (começa com sk-). Fica salva apenas neste computador.",
   "DESC:ApiUrl": "Deixe como está para o DeepSeek. Para outro serviço compatível com OpenAI, insira a URL dele.",
   "DESC:AutoDescribe": "Depois de traduzir, escreve descrições para os assets do menu de construção que não têm nenhuma.",
-  "OPT:IncludeRoadBuilderRoads": "Incluir estradas do Road Builder",
-  "DESC:IncludeRoadBuilderRoads": "Traduz e descreve as estradas geradas pelo Road Builder. Os nomes são traduzidos e uma descrição curta é gerada automaticamente.",
   "DESC:AutoReview": "Após cada lote, a IA avalia os resultados e reescreve os fracos. Aumenta o uso da API em cerca de 50%.",
   "DESC:AutoTranslateNewMods": "Traduz mods em segundo plano depois que eles são instalados ou atualizados.",
   "DESC:AutoTranslateOnStartup": "Sempre que o jogo inicia, traduz todos os mods ainda não traduzidos, incluindo os antigos.",
@@ -21,6 +19,8 @@
   "DESC:FixMixedAll": "Traduz palavras em inglês que sobraram nas traduções oficiais e nas que vêm com os mods. Marcas e nomes são mantidos.",
   "DESC:FixMixedSelectedMod": "Traduz o inglês que sobrou nas traduções próprias deste mod (ou do jogo base). As correções são salvas à parte.",
   "DESC:FollowGameLanguageOptions": "Alguns mods ignoram traduções quando a própria opção de idioma está em inglês; isto faz a opção seguir o jogo.",
+  "DESC:IncludeDlcContent": "Traduz também os DLCs e Creator Packs que você possui, cada um listado separadamente: nomes e descrições que só existem em inglês são traduzidos, e os itens sem descrição ganham uma. As traduções oficiais continuam como estão.",
+  "DESC:IncludeRoadBuilderRoads": "Traduz e descreve as estradas geradas pelo Road Builder. Os nomes são traduzidos e uma descrição curta é gerada automaticamente.",
   "DESC:LogShowSamples": "Mostra um ou dois exemplos de original e tradução abaixo de cada lote.",
   "DESC:ModelName": "Para o DeepSeek, use deepseek-flash.",
   "DESC:OpenTranslationFolder": "As traduções podem ser editadas manualmente; exclua um arquivo para traduzir aquele mod de novo.",
@@ -74,6 +74,8 @@
   "OPT:FixMixedAll": "Corrigir texto misto",
   "OPT:FixMixedSelectedMod": "Corrigir texto misto",
   "OPT:FollowGameLanguageOptions": "Idioma dos mods segue o jogo",
+  "OPT:IncludeDlcContent": "Incluir DLCs e Creator Packs",
+  "OPT:IncludeRoadBuilderRoads": "Incluir estradas do Road Builder",
   "OPT:LogShowSamples": "Mostrar exemplos",
   "OPT:ModelName": "Modelo",
   "OPT:OpenTranslationFolder": "Abrir pasta",

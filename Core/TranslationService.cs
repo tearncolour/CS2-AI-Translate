@@ -353,7 +353,8 @@ namespace AITranslate.Core
             var lm = Localization;
             int sources = ScanCapture.CountSources(lm, lm.fallbackLocaleId);
             bool i18n = m_I18N.Available && m_I18N.IsInitialized;
-            return $"{mods}|{sources}|{i18n}|{lm.activeLocaleId}";
+            // 翻译范围的开关也算在内：切换后重新检测。
+            return $"{mods}|{sources}|{i18n}|{lm.activeLocaleId}|{m_Setting.IncludeDlcContent}|{m_Setting.IncludeRoadBuilderRoads}";
         }
 
         /// <summary>I18N Everywhere 已加载完成但尚未接入时立即接入（任何检测之前都要先做，否则结果不准）。</summary>
@@ -1923,7 +1924,10 @@ namespace AITranslate.Core
         private static async Task<BatchOutcome> DescribeBatchAsync(Translator translator, string modName, IReadOnlyDictionary<string, string> summaries, string modKey, List<WorkItem> batch, CancellationToken ct)
         {
             var outcome = new BatchOutcome();
-            summaries.TryGetValue(modKey, out var summary);
+            if (!summaries.TryGetValue(modKey, out var summary) && ModScanner.IsContentPack(modKey))
+            {
+                summary = "Official DLC / creator pack for Cities: Skylines II.";
+            }
             var generated = await translator.DescribeAsync(modName, summary, batch.Select(w => w.Asset).ToList(), ct).ConfigureAwait(false);
             foreach (var kv in generated)
             {
