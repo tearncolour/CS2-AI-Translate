@@ -161,6 +161,11 @@ namespace AITranslate.Core
             {
                 return 0;
             }
+            // 绝大多数译文里根本没有拉丁字母单词。清洗只会删掉内容或换成空格，不会拼出新单词，可以直接跳过（检测时要对几万条官方译文做这一步）。
+            if (!HasLatinRun(translation))
+            {
+                return 0;
+            }
             // mod 名等受保护的专有名词、标签和路径照搬是正确的，先去掉再检查。
             string dst = Clean(translation, names, ownerName);
             if (!LanguageDetector.ScriptMatches(dst, locale))
@@ -184,20 +189,69 @@ namespace AITranslate.Core
             return copied;
         }
 
+        /// <summary>是否含有 s_LatinWord 可能匹配的片段：一个拉丁字母后面紧跟两个拉丁字母或撇号。</summary>
+        private static bool HasLatinRun(string text)
+        {
+            int run = 0;
+            foreach (char c in text)
+            {
+                bool letter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+                if (letter || (c == '\'' && run > 0))
+                {
+                    if (++run >= 3)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    run = 0;
+                }
+            }
+            return false;
+        }
+
+        private static readonly Regex s_TrailingTag = new Regex(@"\s*[\[(（【][^\])）】]*[\])）】]\s*$", RegexOptions.Compiled);
+
         private static string Clean(string text, ProtectedNames names, string ownerName)
         {
             text = names?.Strip(text) ?? text;
             if (!string.IsNullOrWhiteSpace(ownerName))
             {
                 // "Road Builder [BETA]" 在说明里通常写成 "Road Builder"。
-                string bare = Regex.Replace(ownerName, @"\s*[\[(（【][^\])）】]*[\])）】]\s*$", string.Empty).Trim();
-                foreach (string name in new[] { ownerName.Trim(), bare }.Where(n => n.Length >= 3).Distinct())
+                string full = ownerName.Trim();
+                string bare = s_TrailingTag.Replace(ownerName, string.Empty).Trim();
+                text = RemoveIgnoreCase(text, full);
+                if (bare != full)
                 {
-                    text = Regex.Replace(text, Regex.Escape(name), " ", RegexOptions.IgnoreCase);
+                    text = RemoveIgnoreCase(text, bare);
                 }
             }
             text = s_KeepAsIs.Replace(text, " ");
             return s_Strip.Replace(text, " ");
+        }
+
+        /// <summary>把 <paramref name="name"/> 的所有出现（不分大小写）换成空格；少于 3 个字符的名字不处理。</summary>
+        private static string RemoveIgnoreCase(string text, string name)
+        {
+            if (name.Length < 3)
+            {
+                return text;
+            }
+            int i = text.IndexOf(name, StringComparison.OrdinalIgnoreCase);
+            if (i < 0)
+            {
+                return text;
+            }
+            var sb = new System.Text.StringBuilder(text.Length);
+            int start = 0;
+            while (i >= 0)
+            {
+                sb.Append(text, start, i - start).Append(' ');
+                start = i + name.Length;
+                i = text.IndexOf(name, start, StringComparison.OrdinalIgnoreCase);
+            }
+            return sb.Append(text, start, text.Length - start).ToString();
         }
 
         // 地区词（简/繁中文）→ 原文里能证明它的英文写法。审校常凭 mod 名（"Eastern Europe Pack"）给译文加上地区，这不是改进。

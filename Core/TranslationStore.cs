@@ -202,9 +202,25 @@ namespace AITranslate.Core
 
         public static string FileNameFor(string modKey)
         {
-            string name = Regex.Replace(modKey ?? "unknown", @"[^A-Za-z0-9_\-.]", "_");
+            string name = modKey ?? "unknown";
+            // 分组键几乎都已经是合法文件名（pdx_123、desc_local_X）：不分配新字符串，直接返回。
+            bool valid = true;
+            foreach (char c in name)
+            {
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.'))
+                {
+                    valid = false;
+                    break;
+                }
+            }
+            if (!valid)
+            {
+                name = s_InvalidFileChars.Replace(name, "_");
+            }
             return name.Length > 120 ? name.Substring(0, 120) : name;
         }
+
+        private static readonly Regex s_InvalidFileChars = new Regex(@"[^A-Za-z0-9_\-.]", RegexOptions.Compiled);
 
         private string TranslationDir(string locale) => Path.Combine(IsFallback(locale) ? FallbackDir : LocalizationDir, locale);
 

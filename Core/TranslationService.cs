@@ -533,7 +533,7 @@ namespace AITranslate.Core
                     }
                     if (scan != null)
                     {
-                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread), analyze {analyzeMs} ms (background), total {total.ElapsedMilliseconds} ms");
+                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread, longest frame {snapshot.CaptureMaxFrameMs:0.0} ms), analyze {analyzeMs} ms (background), total {total.ElapsedMilliseconds} ms");
                     }
                     FinishScan(scan, snapshot, total);
                 });
@@ -575,6 +575,7 @@ namespace AITranslate.Core
         {
             var applyWatch = Stopwatch.StartNew();
             PruneObsolete(scan);
+            long pruneMs = applyWatch.ElapsedMilliseconds;
             m_Scan = scan;
             if (m_NeedsReload)
             {
@@ -582,7 +583,7 @@ namespace AITranslate.Core
                 ReloadI18N();
                 ApplyToGame(forceReload: true);
             }
-            Mod.Log.Info($"Scan applied in {applyWatch.ElapsedMilliseconds} ms (main thread): locale={scan.Locale}, i18n={UseI18N}, mods={scan.Mods.Count}, unnamed assets={scan.UnnamedAssets}, needing translation={scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation)}");
+            long reloadMs = applyWatch.ElapsedMilliseconds - pruneMs;
             string scanSummary = L("LogScan", scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation), scan.Mods.Values.Where(m => m.State == ModState.NeedsTranslation).Sum(m => m.Pending.Count), scan.MissingDescriptions);
             if (scanSummary != m_LastScanSummary)
             {
@@ -607,6 +608,8 @@ namespace AITranslate.Core
 
             EnsureSelection();
             UpdateOverview();
+            // 这一步整个在主线程，耗时就是一帧的卡顿。
+            Mod.Log.Info($"Scan applied in {applyWatch.ElapsedMilliseconds} ms (main thread: prune {pruneMs}, reload {reloadMs}): locale={scan.Locale}, i18n={UseI18N}, mods={scan.Mods.Count}, unnamed assets={scan.UnnamedAssets}, needing translation={scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation)}");
         }
 
         private static int Safe(Func<int> action)
@@ -725,7 +728,8 @@ namespace AITranslate.Core
                 }
                 foreach (string key in info.OwnKeys)
                 {
-                    if (saved.Translations.TryGetValue(key, out var t) && info.Source.TryGetValue(key, out var s) && !ModScanner.IsFixedFormat(key, s))
+                    // 主线程只复制数据；判断格式固定的条目（正则）放到后台。
+                    if (saved.Translations.TryGetValue(key, out var t) && info.Source.TryGetValue(key, out var s))
                     {
                         saved.Scores.TryGetValue(key, out int score);
                         snapshot.Add((info.Key, key, s, t, score));
@@ -737,7 +741,7 @@ namespace AITranslate.Core
             {
                 Glossary glossary = useGlossary && glossaryTask != null ? await glossaryTask.ConfigureAwait(false) : Glossary.Empty;
                 var result = new Dictionary<string, QualitySummary>(StringComparer.Ordinal);
-                foreach (var group in snapshot.GroupBy(e => e.mod))
+                foreach (var group in snapshot.Where(e => !ModScanner.IsFixedFormat(e.key, e.source)).GroupBy(e => e.mod))
                 {
                     var q = new QualitySummary();
                     var scores = new List<int>();
@@ -925,19 +929,18 @@ namespace AITranslate.Core
 
             foreach (var info in scan.Mods.Values)
             {
+                if (info.Obsolete.Count == 0 && info.Stale.Count == 0)
+                {
+                    continue;
+                }
                 var saved = Store.Get(scan.Locale, info.Key);
                 if (saved == null)
                 {
                     continue;
                 }
-                // 移除：已有自带/官方译文；原文是内部 ID；按现在的规则不该翻译且译文与原文相同（翻了也没用）。
-                // 注意：本次检测里“看不到原文”的条目绝不删除——启动时 mod 和资产是陆续加载的，看不到不代表已删除；
-                // 真的被 mod 删掉的文本留在文件里也无害。
-                var remove = saved.Translations.Keys
-                    .Where(k => info.Source.TryGetValue(k, out var src)
-                        && (TextRules.IsMachineIdentifier(src)
-                            || (!TextRules.IsTranslatable(src, scan.Locale) && saved.Translations[k] == src)))
-                    .Concat(info.Stale).Distinct().ToList();
+                // 移除：已有自带/官方译文（Stale）；原文是内部 ID、或不该翻译且译文与原文相同（Obsolete，后台已算好）。
+                // 本次检测里“看不到原文”的条目不会出现在这两个列表里：启动时 mod 和资产是陆续加载的，看不到不代表已删除。
+                var remove = info.Obsolete.Concat(info.Stale).Distinct().Where(saved.Translations.ContainsKey).ToList();
                 if (remove.Count == 0)
                 {
                     continue;

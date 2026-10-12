@@ -117,6 +117,9 @@ namespace AITranslate.Core
 
         public long CaptureMs;
         public int CaptureFrames;
+
+        /// <summary>采集时单帧最长耗时（毫秒），用来发现超出每帧预算、会造成卡顿的步骤。</summary>
+        public double CaptureMaxFrameMs;
     }
 
     /// <summary>
@@ -161,6 +164,7 @@ namespace AITranslate.Core
             finally
             {
                 m_Total.Stop();
+                m_Snapshot.CaptureMaxFrameMs = Math.Max(m_Snapshot.CaptureMaxFrameMs, m_Frame.Elapsed.TotalMilliseconds);
             }
             if (!more)
             {

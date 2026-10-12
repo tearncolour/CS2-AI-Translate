@@ -22,6 +22,14 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // 性能基准（见 Bench.cs）。
+        string benchGame = Environment.GetEnvironmentVariable("BENCH_GAME");
+        if (!string.IsNullOrEmpty(benchGame))
+        {
+            Bench.Run(benchGame, Environment.GetEnvironmentVariable("BENCH_STORE"));
+            return 0;
+        }
+
         // 导出设置页的英文原文（逻辑键 → 英文），供编写 Locale/Languages/*.json 参考。
         string exportUi = Environment.GetEnvironmentVariable("EXPORT_UI");
         if (!string.IsNullOrEmpty(exportUi))

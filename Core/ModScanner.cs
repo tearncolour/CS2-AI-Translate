@@ -45,6 +45,9 @@ namespace AITranslate.Core
         /// <summary>之前机翻过、但现在已有自带/官方译文的 key，应从译文文件中移除。</summary>
         public readonly List<string> Stale = new List<string>();
 
+        /// <summary>按现在的规则不该存在的译文（原文是内部 ID，或不该翻译且译文与原文相同），应从译文文件中移除。后台算好，主线程只删除。</summary>
+        public readonly List<string> Obsolete = new List<string>();
+
         /// <summary>出现在建造菜单里、但没有任何描述的资产（待生成）。</summary>
         public readonly List<AssetContext> MissingDescriptions = new List<AssetContext>();
 
@@ -507,6 +510,7 @@ namespace AITranslate.Core
             CollectGlossary(result);   // 先取得原版官方术语，分类时要用
             Phase("glossary");
             Classify(result, store, i18n);
+            CollectObsolete(result, store);
             Phase("classify");
             CollectMixedNative(result, store, i18n);
             Phase("official");
@@ -1343,6 +1347,31 @@ namespace AITranslate.Core
                         // 原文在 mod 更新后变了，需要重翻。
                         info.Outdated++;
                         info.Pending.Add(kv.Key);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 找出按现在的规则不该存在的已存译文：原文是内部 ID；或不该翻译、且译文与原文相同（翻了也没用）。
+        /// 只看本次检测里看得到原文的条目：启动时 mod 和资产是陆续加载的，看不到不代表已删除。
+        /// </summary>
+        private static void CollectObsolete(ScanResult result, TranslationStore store)
+        {
+            foreach (var info in result.Mods.Values)
+            {
+                var saved = store.Get(result.Locale, info.Key);
+                if (saved == null)
+                {
+                    continue;
+                }
+                foreach (var kv in saved.Translations)
+                {
+                    // 先比较字符串（便宜），相同时才做正则判断。
+                    if (info.Source.TryGetValue(kv.Key, out var src)
+                        && ((kv.Value == src && !TextRules.IsTranslatable(src, result.Locale)) || TextRules.IsMachineIdentifier(src)))
+                    {
+                        info.Obsolete.Add(kv.Key);
                     }
                 }
             }

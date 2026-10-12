@@ -44,19 +44,47 @@ namespace AITranslate.Core
 
         public bool IsEmpty => m_Name == null && m_Parts == null && string.IsNullOrEmpty(m_Literal);
 
+        // 设置页打开时每帧都会取一次文字：同一语言下格式化结果不变，缓存起来（内容不可变，语言变化时按 Generation 失效）。
+        // 值和版本号放在同一个对象里一次发布，别的线程不会读到不配对的两者。
+        private sealed class Rendered
+        {
+            public readonly int Generation;
+            public readonly string Text;
+
+            public Rendered(int generation, string text)
+            {
+                Generation = generation;
+                Text = text;
+            }
+        }
+
+        private Rendered m_Rendered;
+
         public override string ToString()
         {
-            if (m_Parts != null)
-            {
-                return string.Concat(m_Parts.Select(p => p.ToString()));
-            }
-            if (m_Name == null)
+            if (m_Name == null && m_Parts == null)
             {
                 return m_Literal;
             }
-            // 参数里的 LocText 也按当前语言渲染（如“上次：{0}”里的任务总结）。
-            object[] args = m_Args?.Select(a => a is LocText t ? t.ToString() : a).ToArray();
-            return Resolver != null ? Resolver(m_Name, args) : m_Name;
+            int generation = s_Generation;
+            var rendered = m_Rendered;
+            if (rendered != null && rendered.Generation == generation)
+            {
+                return rendered.Text;
+            }
+            string text;
+            if (m_Parts != null)
+            {
+                text = string.Concat(m_Parts.Select(p => p.ToString()));
+            }
+            else
+            {
+                // 参数里的 LocText 也按当前语言渲染（如“上次：{0}”里的任务总结）。
+                object[] args = m_Args?.Select(a => a is LocText t ? t.ToString() : a).ToArray();
+                text = Resolver != null ? Resolver(m_Name, args) : m_Name;
+            }
+            m_Rendered = new Rendered(generation, text);
+            return text;
         }
     }
 }
