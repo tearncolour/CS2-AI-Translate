@@ -269,15 +269,32 @@ namespace AITranslate.Core
             }
             yield return true;
 
-            // 词典副本
-            m_Snapshot.Active = CopyDictionary(lm.activeDictionary);
+            // 词典副本（活动词典可能有 2–3 万条，分批复制避免单帧卡顿）
+            {
+                var dictCopy = new Dictionary<string, (string, bool)>(lm.activeDictionary.entryCount, StringComparer.Ordinal);
+                int di = 0;
+                foreach (var kv in lm.activeDictionary.entries)
+                {
+                    dictCopy[kv.Key] = (kv.Value, !lm.activeDictionary.ContainsID(kv.Key, ignoreFallbackEntries: true));
+                    if ((++di & 255) == 0 && OverBudget)
+                    {
+                        yield return true;
+                    }
+                }
+                m_Snapshot.Active = new DictSnapshot(dictCopy);
+            }
             yield return true;
             if (typeof(LocalizationManager).GetField("m_FallbackDictionary", kAll)?.GetValue(lm) is LocalizationDictionary fallback)
             {
                 var copy = new Dictionary<string, string>(fallback.entryCount, StringComparer.Ordinal);
+                int fi = 0;
                 foreach (var kv in fallback.entries)
                 {
                     copy[kv.Key] = kv.Value;
+                    if ((++fi & 255) == 0 && OverBudget)
+                    {
+                        yield return true;
+                    }
                 }
                 m_Snapshot.Fallback = copy;
             }
@@ -285,7 +302,17 @@ namespace AITranslate.Core
             var i18nDict = m_I18N.GetCurrentDictionary();
             if (i18nDict != null)
             {
-                m_Snapshot.I18NCurrent = new Dictionary<string, string>(i18nDict, StringComparer.Ordinal);
+                var i18nCopy = new Dictionary<string, string>(i18nDict.Count, StringComparer.Ordinal);
+                int ii = 0;
+                foreach (var kv in i18nDict)
+                {
+                    i18nCopy[kv.Key] = kv.Value;
+                    if ((++ii & 255) == 0 && OverBudget)
+                    {
+                        yield return true;
+                    }
+                }
+                m_Snapshot.I18NCurrent = i18nCopy;
             }
             // Road Builder：读取用户生成的道路名称（prefab 名是 GUID-SteamID，真正的名字在 JSON 里）。
             if (Mod.Setting?.IncludeRoadBuilderRoads == true)
@@ -412,6 +439,7 @@ namespace AITranslate.Core
             return owned ? content.name : null;
         }
 
+        /// <summary>复制游戏词典的原始条目（entries 直接读内部字典，不经过 I18N 的拦截）。内部字典泛型类型参数里含有私有 struct，用反射拿到后转成只读 IEnumerable 来用。</summary>
         /// <summary>复制游戏词典的原始条目（entries 直接读内部字典，不经过 I18N 的拦截）。</summary>
         private static DictSnapshot CopyDictionary(LocalizationDictionary dict)
         {
