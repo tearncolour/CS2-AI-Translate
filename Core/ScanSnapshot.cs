@@ -281,7 +281,7 @@ namespace AITranslate.Core
                 var entries = new Dictionary<string, string>(StringComparer.Ordinal);
                 snap.Entries = entries;
                 foreach (bool y in CopyInChunks(
-                    () => source.ReadEntries(new List<IDictionaryEntryError>(), new Dictionary<string, int>()),
+                    () => EntriesOf(source),
                     entries.Clear,
                     kv =>
                     {
@@ -513,6 +513,21 @@ namespace AITranslate.Core
                 m_OwnedPacks[content] = owned;
             }
             return owned ? content.name : null;
+        }
+
+        private static readonly FieldInfo s_MemorySourceDict = typeof(MemorySource).GetField("m_Dict", kAll);
+
+        /// <summary>
+        /// 一个本地化源的全部条目。MemorySource（很多 mod 共用的大文本源）的 ReadEntries 会先把每一条都解析一遍
+        /// （只为了统计我们用不到的编号条目数），一次就是 8–10 ms；它返回的正是内部字典，所以直接读字典，结果相同。
+        /// </summary>
+        private static IEnumerable<KeyValuePair<string, string>> EntriesOf(IDictionarySource source)
+        {
+            if (source.GetType() == typeof(MemorySource) && s_MemorySourceDict?.GetValue(source) is Dictionary<string, string> dict)
+            {
+                return dict;
+            }
+            return source.ReadEntries(new List<IDictionaryEntryError>(), new Dictionary<string, int>());
         }
 
         /// <summary>某语言下的本地化源数量（不含本 mod 的注入源），用于检测是否有 mod 新增了文本。</summary>
