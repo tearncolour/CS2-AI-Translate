@@ -548,8 +548,8 @@ namespace AITranslate.Core
                     }
                     if (scan != null)
                     {
-                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread, longest frame {snapshot.CaptureMaxFrameMs:0.0} ms in {snapshot.CaptureMaxFrameStage}, "
-                            + $"{snapshot.CaptureSlowFrames} frames over {kCaptureBudgetMs * 2:0} ms, slowest prefab {snapshot.CaptureSlowestPrefabMs:0.0} ms {snapshot.CaptureSlowestPrefab}, restarts {snapshot.CaptureRestarts}), "
+                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread, longest frame {snapshot.CaptureMaxFrameMs:0.0} ms in {snapshot.CaptureMaxFrameStage}{(snapshot.CaptureMaxFrameGc ? " (GC)" : string.Empty)}, "
+                            + $"{snapshot.CaptureSlowFrames} frames over {kCaptureBudgetMs * 2:0} ms, slowest prefab {snapshot.CaptureSlowestPrefabMs:0.0} ms {snapshot.CaptureSlowestPrefab}{(snapshot.CaptureSlowestPrefabGc ? " (GC)" : string.Empty)}, GCs {snapshot.CaptureGcCount}, restarts {snapshot.CaptureRestarts}), "
                             + $"analyze {analyzeMs} ms (background), total {total.ElapsedMilliseconds} ms");
                     }
                     FinishScan(scan, snapshot, total);

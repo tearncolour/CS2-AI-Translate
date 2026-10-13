@@ -132,6 +132,13 @@ namespace AITranslate.Core
         public double CaptureSlowestPrefabMs;
         public string CaptureSlowestPrefab;
 
+        /// <summary>最长那一帧 / 最慢那个预制件期间是否发生了垃圾回收（偶发的长停顿通常是它，而不是代码本身慢）。</summary>
+        public bool CaptureMaxFrameGc;
+        public bool CaptureSlowestPrefabGc;
+
+        /// <summary>采集期间发生的垃圾回收次数。</summary>
+        public int CaptureGcCount;
+
         /// <summary>分帧复制时集合被游戏改动、从头重来的次数（启动时 mod 陆续注册文本会发生）。</summary>
         public int CaptureRestarts;
     }
@@ -171,6 +178,7 @@ namespace AITranslate.Core
             m_Total.Start();
             m_Snapshot.CaptureFrames++;
             string stageAtStart = StageLabel();
+            int gcBefore = GC.CollectionCount(0);
             bool more;
             try
             {
@@ -180,6 +188,8 @@ namespace AITranslate.Core
             {
                 m_Total.Stop();
                 double ms = m_Frame.Elapsed.TotalMilliseconds;
+                int gcs = GC.CollectionCount(0) - gcBefore;
+                m_Snapshot.CaptureGcCount += gcs;
                 if (ms > budgetMs * 2)
                 {
                     m_Snapshot.CaptureSlowFrames++;
@@ -187,6 +197,7 @@ namespace AITranslate.Core
                 if (ms > m_Snapshot.CaptureMaxFrameMs)
                 {
                     m_Snapshot.CaptureMaxFrameMs = ms;
+                    m_Snapshot.CaptureMaxFrameGc = gcs > 0;
                     string stageAtEnd = StageLabel();
                     m_Snapshot.CaptureMaxFrameStage = stageAtStart == stageAtEnd ? stageAtEnd : stageAtStart + " → " + stageAtEnd;
                 }
@@ -325,12 +336,14 @@ namespace AITranslate.Core
             for (int i = 0; i < prefabs.Count; i++)
             {
                 long before = m_Frame.ElapsedTicks;
+                int gcBefore = GC.CollectionCount(0);
                 var snap = CapturePrefab(prefabs[i], includeDlc);
                 double ms = (m_Frame.ElapsedTicks - before) * 1000.0 / Stopwatch.Frequency;
                 if (ms > m_Snapshot.CaptureSlowestPrefabMs)
                 {
                     m_Snapshot.CaptureSlowestPrefabMs = ms;
                     m_Snapshot.CaptureSlowestPrefab = prefabs[i]?.name;
+                    m_Snapshot.CaptureSlowestPrefabGc = GC.CollectionCount(0) != gcBefore;
                 }
                 if (snap != null)
                 {
