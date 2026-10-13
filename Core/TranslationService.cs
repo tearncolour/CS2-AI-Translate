@@ -446,6 +446,10 @@ namespace AITranslate.Core
         private bool m_ScanRunning;
         private bool m_ScanAgain;
 
+        // 采集连续失败的次数：失败后自动重试，连续失败太多次就停下来等环境变化，避免每隔几秒刷一次错误。
+        private int m_CaptureFailures;
+        private const int kMaxCaptureRetries = 3;
+
         /// <summary>
         /// 开始一次检测：主线程分帧采集游戏数据（每帧几毫秒）→ 后台线程分析 → 主线程套用结果。
         /// 整个过程不会卡住游戏界面。正在检测时再次调用，会在本次结束后再检测一次。
@@ -494,10 +498,21 @@ namespace AITranslate.Core
                 }
                 catch (Exception ex)
                 {
-                    Mod.Log.Error(ex, "Scan capture failed: " + ex.Message);
+                    // 启动时游戏还在注册文本，偶尔会读到正在变化的集合：几秒后自动再检测一次，而不是等到环境再次变化。
+                    if (m_CaptureFailures++ < kMaxCaptureRetries)
+                    {
+                        Mod.Log.Warn($"Scan capture failed, retrying in {kSettleSeconds} s: {ex.GetType().Name}: {ex.Message}");
+                        m_RescanPending = true;
+                        m_SignatureChangedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        Mod.Log.Error(ex, "Scan capture failed: " + ex.Message);
+                    }
                     FinishScan(null, null, total);
                     return true;
                 }
+                m_CaptureFailures = 0;
                 AnalyzeInBackground(capture.Result, bridge, total, attempt: 0);
                 return true;
             });
@@ -533,7 +548,9 @@ namespace AITranslate.Core
                     }
                     if (scan != null)
                     {
-                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread, longest frame {snapshot.CaptureMaxFrameMs:0.0} ms), analyze {analyzeMs} ms (background), total {total.ElapsedMilliseconds} ms");
+                        Mod.Log.Info($"Scan timing: capture {snapshot.CaptureMs} ms over {snapshot.CaptureFrames} frames (main thread, longest frame {snapshot.CaptureMaxFrameMs:0.0} ms in {snapshot.CaptureMaxFrameStage}, "
+                            + $"{snapshot.CaptureSlowFrames} frames over {kCaptureBudgetMs * 2:0} ms, slowest prefab {snapshot.CaptureSlowestPrefabMs:0.0} ms {snapshot.CaptureSlowestPrefab}, restarts {snapshot.CaptureRestarts}), "
+                            + $"analyze {analyzeMs} ms (background), total {total.ElapsedMilliseconds} ms");
                     }
                     FinishScan(scan, snapshot, total);
                 });
@@ -591,25 +608,31 @@ namespace AITranslate.Core
                 ActivityLog.Info(T("LogScan", scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation), scan.Mods.Values.Where(m => m.State == ModState.NeedsTranslation).Sum(m => m.Pending.Count), scan.MissingDescriptions));
             }
 
-            var en = scan.GlossaryEnglish;
-            var target = scan.GlossaryTarget;
+            long summaryMs = applyWatch.ElapsedMilliseconds - pruneMs - reloadMs;
+
             string locale = scan.Locale;
-            // 官方区域建筑类型（低层住宅、中层联排住宅…）和地区（欧洲、北美）一定按游戏用语翻译。
-            var officialTerms = scan.OfficialBuildingTypes.Concat(scan.OfficialRegions).GroupBy(p => p.Key).ToDictionary(g => g.Key, g => g.First().Value);
+            // 术语表全部在后台准备（官方区域建筑类型和地区一定按游戏用语翻译）。
             m_GlossaryTask = Task.Run(() =>
             {
-                var g = Glossary.Build(en, target, locale).WithForced(officialTerms);
+                var officialTerms = scan.OfficialBuildingTypes.Concat(scan.OfficialRegions).GroupBy(p => p.Key).ToDictionary(g => g.Key, g => g.First().Value);
+                var g = Glossary.Build(scan.GlossaryEnglish, scan.GlossaryTarget, locale).WithForced(officialTerms);
                 Mod.Log.Info($"Glossary built for {locale}: {g.Count} terms");
                 return g;
             });
+            long mark = applyWatch.ElapsedMilliseconds;
             ComputeQualityInBackground(scan, m_GlossaryTask);
+            long qualityMs = applyWatch.ElapsedMilliseconds - mark;
+            mark = applyWatch.ElapsedMilliseconds;
             FixModLanguageOptions(scan.Locale);
+            long optionsMs = applyWatch.ElapsedMilliseconds - mark;
+            mark = applyWatch.ElapsedMilliseconds;
             DetectNewMods();
-
             EnsureSelection();
             UpdateOverview();
+            long restMs = applyWatch.ElapsedMilliseconds - mark;
             // 这一步整个在主线程，耗时就是一帧的卡顿。
-            Mod.Log.Info($"Scan applied in {applyWatch.ElapsedMilliseconds} ms (main thread: prune {pruneMs}, reload {reloadMs}): locale={scan.Locale}, i18n={UseI18N}, mods={scan.Mods.Count}, unnamed assets={scan.UnnamedAssets}, needing translation={scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation)}");
+            Mod.Log.Info($"Scan applied in {applyWatch.ElapsedMilliseconds} ms (main thread: prune {pruneMs}, reload {reloadMs}, summary {summaryMs}, quality snapshot {qualityMs}, mod language options {optionsMs}, rest {restMs}): "
+                + $"locale={scan.Locale}, i18n={UseI18N}, mods={scan.Mods.Count}, unnamed assets={scan.UnnamedAssets}, needing translation={scan.Mods.Values.Count(m => m.State == ModState.NeedsTranslation)}");
         }
 
         private static int Safe(Func<int> action)

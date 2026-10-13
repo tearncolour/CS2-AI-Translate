@@ -20,6 +20,14 @@ internal static class Program
         }
     }
 
+    /// <summary>读到第三条时出错的本地化源。</summary>
+    private static IEnumerable<int> Throwing()
+    {
+        yield return 1;
+        yield return 2;
+        throw new IOException("broken source");
+    }
+
     private static int Main(string[] args)
     {
         // 性能基准（见 Bench.cs）。
@@ -298,6 +306,40 @@ internal static class Program
         Check(ChatClient.NormalizeEndpoint("https://api.deepseek.com") == "https://api.deepseek.com/chat/completions", "endpoint base");
         Check(ChatClient.NormalizeEndpoint("api.deepseek.com/v1/") == "https://api.deepseek.com/v1/chat/completions", "endpoint v1");
         Check(ChatClient.NormalizeEndpoint("https://x.com/v1/chat/completions") == "https://x.com/v1/chat/completions", "endpoint full");
+
+        // 分帧复制：预算用完就让出一帧，集合在两帧之间被改动时从头重来，最后一次一帧复制完。
+        {
+            var source = new Dictionary<string, string>();
+            for (int i = 0; i < 1000; i++)
+            {
+                source["k" + i] = "v" + i;
+            }
+            var copy = new Dictionary<string, string>();
+            int restarts = 0;
+            int frames = 0;
+            foreach (bool _ in ChunkedCopy.Run(() => source, copy.Clear, kv => copy[kv.Key] = kv.Value, () => true, () => restarts++))
+            {
+                frames++;
+            }
+            Check(copy.Count == 1000 && restarts == 0 && frames == 3, $"chunked copy: yields every 256 entries ({frames} frames)");
+
+            copy.Clear();
+            restarts = 0;
+            int modifications = 0;
+            foreach (bool _ in ChunkedCopy.Run(() => source, copy.Clear, kv => copy[kv.Key] = kv.Value, () => true, () => restarts++))
+            {
+                // 游戏在两帧之间往词典里加了条目（每次都改，直到退到一帧复制完的那一次）。
+                source["new" + modifications++] = "x";
+            }
+            Check(restarts == ChunkedCopy.kChunkedAttempts && copy.Count == source.Count, $"chunked copy: restarts when modified, then copies in one go ({restarts} restarts, {copy.Count}/{source.Count})");
+
+            var errors = new List<string>();
+            var partial = new List<int>();
+            foreach (bool _ in ChunkedCopy.Run(() => Throwing(), partial.Clear, partial.Add, () => false, null, ex => errors.Add(ex.Message)))
+            {
+            }
+            Check(partial.Count == 2 && errors.Count == 1, "chunked copy: read error keeps what was read and reports once");
+        }
 
         // ---------- 真实文本在指定目标语言下被判为「需要翻译」的条目
         string regionRoot = Environment.GetEnvironmentVariable("REGION_ROOT");

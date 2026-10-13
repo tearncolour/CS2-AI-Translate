@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Colossal;
 using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
@@ -120,6 +121,19 @@ namespace AITranslate.Core
 
         /// <summary>采集时单帧最长耗时（毫秒），用来发现超出每帧预算、会造成卡顿的步骤。</summary>
         public double CaptureMaxFrameMs;
+
+        /// <summary>最长那一帧在做哪一步（以及当时处理的源或预制件）。</summary>
+        public string CaptureMaxFrameStage;
+
+        /// <summary>超出每帧预算两倍以上的帧数。</summary>
+        public int CaptureSlowFrames;
+
+        /// <summary>单个预制件最长的采集耗时（毫秒）和它的名字。</summary>
+        public double CaptureSlowestPrefabMs;
+        public string CaptureSlowestPrefab;
+
+        /// <summary>分帧复制时集合被游戏改动、从头重来的次数（启动时 mod 陆续注册文本会发生）。</summary>
+        public int CaptureRestarts;
     }
 
     /// <summary>
@@ -156,6 +170,7 @@ namespace AITranslate.Core
             m_Frame = Stopwatch.StartNew();
             m_Total.Start();
             m_Snapshot.CaptureFrames++;
+            string stageAtStart = StageLabel();
             bool more;
             try
             {
@@ -164,7 +179,17 @@ namespace AITranslate.Core
             finally
             {
                 m_Total.Stop();
-                m_Snapshot.CaptureMaxFrameMs = Math.Max(m_Snapshot.CaptureMaxFrameMs, m_Frame.Elapsed.TotalMilliseconds);
+                double ms = m_Frame.Elapsed.TotalMilliseconds;
+                if (ms > budgetMs * 2)
+                {
+                    m_Snapshot.CaptureSlowFrames++;
+                }
+                if (ms > m_Snapshot.CaptureMaxFrameMs)
+                {
+                    m_Snapshot.CaptureMaxFrameMs = ms;
+                    string stageAtEnd = StageLabel();
+                    m_Snapshot.CaptureMaxFrameStage = stageAtStart == stageAtEnd ? stageAtEnd : stageAtStart + " → " + stageAtEnd;
+                }
             }
             if (!more)
             {
@@ -175,13 +200,36 @@ namespace AITranslate.Core
 
         private bool OverBudget => m_Frame.Elapsed.TotalMilliseconds >= m_BudgetMs;
 
+        // 正在做的步骤和正在处理的对象（源名、预制件名），只在出现新的最长帧时才拼成文字。
+        private string m_Stage = "start";
+        private string m_StageItem;
+
+        private void SetStage(string stage, string item = null)
+        {
+            m_Stage = stage;
+            m_StageItem = item;
+        }
+
+        private string StageLabel() => m_StageItem == null ? m_Stage : m_Stage + " " + m_StageItem;
+
+        // 分帧复制时集合在两帧之间被游戏改动（启动时 mod 陆续注册文本），继续枚举会抛异常：从头重来。
+        // 连续这么多次都被改动后，最后一次在一帧内复制完（同一帧里不会被改动），保证拿到一致的副本。
+        private IEnumerable<bool> CopyInChunks<T>(Func<IEnumerable<T>> source, Action reset, Action<T> add, Action<Exception> onError = null) =>
+            ChunkedCopy.Run(source, reset, add, () => OverBudget, () => m_Snapshot.CaptureRestarts++, onError);
+
         private IEnumerable<bool> Run()
         {
             var lm = GameManager.instance.localizationManager;
             m_Snapshot.Locale = lm.activeLocaleId;
             m_Snapshot.FallbackLocale = lm.fallbackLocaleId;
 
+            // Road Builder 的道路名称在它自己的 JSON 文件里：纯文件读取，放到后台线程，最后再取结果。
+            Task<Dictionary<string, string>> roadBuilder = Mod.Setting?.IncludeRoadBuilderRoads == true
+                ? Task.Run(() => LoadRoadBuilderNames())
+                : null;
+
             // 已加载的 mod 程序集
+            SetStage("mods");
             foreach (ModManager.ModInfo info in GameManager.instance.modManager)
             {
                 var asset = info?.asset;
@@ -203,7 +251,8 @@ namespace AITranslate.Core
             m_Snapshot.I18NCachedMods = m_I18N.GetCachedMods();
             yield return true;
 
-            // 本地化源（每个源读一次，超时就留到下一帧）
+            // 本地化源（大的源分帧读完）
+            SetStage("sources");
             foreach (IDictionarySource source in GetSources(lm, m_Snapshot.FallbackLocale))
             {
                 if (source is GatedMemorySource)
@@ -228,8 +277,24 @@ namespace AITranslate.Core
                     }
                     snap.AssetName = localeAsset.name;
                 }
-                snap.Entries = ReadSource(source);
-                if (snap.Entries.Count > 0)
+                SetStage("source", snap.AssetName ?? snap.TypeName + "@" + snap.Assembly.GetName().Name);
+                var entries = new Dictionary<string, string>(StringComparer.Ordinal);
+                snap.Entries = entries;
+                foreach (bool y in CopyInChunks(
+                    () => source.ReadEntries(new List<IDictionaryEntryError>(), new Dictionary<string, int>()),
+                    entries.Clear,
+                    kv =>
+                    {
+                        if (kv.Key != null && kv.Value != null)
+                        {
+                            entries[kv.Key] = kv.Value;
+                        }
+                    },
+                    ex => Mod.Log.Warn("Read localization source " + source.GetType().FullName + " failed: " + ex.Message)))
+                {
+                    yield return y;
+                }
+                if (entries.Count > 0)
                 {
                     m_Snapshot.Sources.Add(snap);
                 }
@@ -241,6 +306,7 @@ namespace AITranslate.Core
             yield return true;
 
             // 预制件
+            SetStage("prefab list");
             List<PrefabBase> prefabs;
             try
             {
@@ -254,10 +320,18 @@ namespace AITranslate.Core
                 prefabs = new List<PrefabBase>();
             }
             yield return true;
+            SetStage("prefabs");
             bool includeDlc = Mod.Setting?.IncludeDlcContent == true;
             for (int i = 0; i < prefabs.Count; i++)
             {
+                long before = m_Frame.ElapsedTicks;
                 var snap = CapturePrefab(prefabs[i], includeDlc);
+                double ms = (m_Frame.ElapsedTicks - before) * 1000.0 / Stopwatch.Frequency;
+                if (ms > m_Snapshot.CaptureSlowestPrefabMs)
+                {
+                    m_Snapshot.CaptureSlowestPrefabMs = ms;
+                    m_Snapshot.CaptureSlowestPrefab = prefabs[i]?.name;
+                }
                 if (snap != null)
                 {
                     m_Snapshot.Prefabs.Add(snap);
@@ -269,66 +343,67 @@ namespace AITranslate.Core
             }
             yield return true;
 
-            // 词典副本（活动词典可能有 2–3 万条，分批复制避免单帧卡顿）
+            // 词典副本（活动词典有 2–3 万条，分帧复制；被游戏改动时从头重来）
+            SetStage("active dictionary");
+            var active = lm.activeDictionary;
+            var activeCopy = new Dictionary<string, (string, bool)>(active.entryCount, StringComparer.Ordinal);
+            foreach (bool y in CopyInChunks(() => active.entries, activeCopy.Clear,
+                kv => activeCopy[kv.Key] = (kv.Value, !active.ContainsID(kv.Key, ignoreFallbackEntries: true))))
             {
-                var dictCopy = new Dictionary<string, (string, bool)>(lm.activeDictionary.entryCount, StringComparer.Ordinal);
-                int di = 0;
-                foreach (var kv in lm.activeDictionary.entries)
-                {
-                    dictCopy[kv.Key] = (kv.Value, !lm.activeDictionary.ContainsID(kv.Key, ignoreFallbackEntries: true));
-                    if ((++di & 255) == 0 && OverBudget)
-                    {
-                        yield return true;
-                    }
-                }
-                m_Snapshot.Active = new DictSnapshot(dictCopy);
+                yield return y;
             }
+            m_Snapshot.Active = new DictSnapshot(activeCopy);
             yield return true;
+
+            SetStage("fallback dictionary");
             if (typeof(LocalizationManager).GetField("m_FallbackDictionary", kAll)?.GetValue(lm) is LocalizationDictionary fallback)
             {
-                var copy = new Dictionary<string, string>(fallback.entryCount, StringComparer.Ordinal);
-                int fi = 0;
-                foreach (var kv in fallback.entries)
+                var fallbackCopy = new Dictionary<string, string>(fallback.entryCount, StringComparer.Ordinal);
+                foreach (bool y in CopyInChunks(() => fallback.entries, fallbackCopy.Clear, kv => fallbackCopy[kv.Key] = kv.Value))
                 {
-                    copy[kv.Key] = kv.Value;
-                    if ((++fi & 255) == 0 && OverBudget)
-                    {
-                        yield return true;
-                    }
+                    yield return y;
                 }
-                m_Snapshot.Fallback = copy;
+                m_Snapshot.Fallback = fallbackCopy;
             }
             yield return true;
+
+            SetStage("i18n dictionary");
             var i18nDict = m_I18N.GetCurrentDictionary();
             if (i18nDict != null)
             {
                 var i18nCopy = new Dictionary<string, string>(i18nDict.Count, StringComparer.Ordinal);
-                int ii = 0;
-                foreach (var kv in i18nDict)
+                foreach (bool y in CopyInChunks(() => i18nDict, i18nCopy.Clear, kv => i18nCopy[kv.Key] = kv.Value))
                 {
-                    i18nCopy[kv.Key] = kv.Value;
-                    if ((++ii & 255) == 0 && OverBudget)
-                    {
-                        yield return true;
-                    }
+                    yield return y;
                 }
                 m_Snapshot.I18NCurrent = i18nCopy;
             }
-            // Road Builder：读取用户生成的道路名称（prefab 名是 GUID-SteamID，真正的名字在 JSON 里）。
-            if (Mod.Setting?.IncludeRoadBuilderRoads == true)
+
+            if (roadBuilder != null)
             {
-                LoadRoadBuilderNames(m_Snapshot.RoadBuilderNames);
+                SetStage("road builder");
+                while (!roadBuilder.IsCompleted)
+                {
+                    yield return true;
+                }
+                if (roadBuilder.Status == TaskStatus.RanToCompletion)
+                {
+                    m_Snapshot.RoadBuilderNames = roadBuilder.Result;
+                }
             }
+            SetStage("done");
         }
 
-        private static void LoadRoadBuilderNames(Dictionary<string, string> names)
+        /// <summary>读取 Road Builder 生成的道路名称（prefab 名是 GUID-SteamID，真正的名字在 JSON 里）。在后台线程运行。</summary>
+        private static Dictionary<string, string> LoadRoadBuilderNames()
         {
+            var names = new Dictionary<string, string>(StringComparer.Ordinal);
             try
             {
                 string dir = Path.Combine(EnvPath.kUserDataPath, "ModsData", "RoadBuilder");
                 if (!Directory.Exists(dir))
                 {
-                    return;
+                    return names;
                 }
                 foreach (string file in Directory.GetFiles(dir, "*.json", SearchOption.TopDirectoryOnly))
                 {
@@ -353,6 +428,7 @@ namespace AITranslate.Core
             {
                 Mod.Log.Warn("LoadRoadBuilderNames failed: " + ex.Message);
             }
+            return names;
         }
 
         private PrefabSnapshot CapturePrefab(PrefabBase prefab, bool includeDlc)
@@ -439,18 +515,6 @@ namespace AITranslate.Core
             return owned ? content.name : null;
         }
 
-        /// <summary>复制游戏词典的原始条目（entries 直接读内部字典，不经过 I18N 的拦截）。内部字典泛型类型参数里含有私有 struct，用反射拿到后转成只读 IEnumerable 来用。</summary>
-        /// <summary>复制游戏词典的原始条目（entries 直接读内部字典，不经过 I18N 的拦截）。</summary>
-        private static DictSnapshot CopyDictionary(LocalizationDictionary dict)
-        {
-            var copy = new Dictionary<string, (string, bool)>(dict.entryCount, StringComparer.Ordinal);
-            foreach (var kv in dict.entries)
-            {
-                copy[kv.Key] = (kv.Value, !dict.ContainsID(kv.Key, ignoreFallbackEntries: true));
-            }
-            return new DictSnapshot(copy);
-        }
-
         /// <summary>某语言下的本地化源数量（不含本 mod 的注入源），用于检测是否有 mod 新增了文本。</summary>
         internal static int CountSources(LocalizationManager lm, string localeId)
         {
@@ -467,26 +531,6 @@ namespace AITranslate.Core
             object info = infos[localeId];
             var sources = info?.GetType().GetField("m_Sources", kAll)?.GetValue(info) as IEnumerable;
             return sources?.OfType<IDictionarySource>().ToList() ?? new List<IDictionarySource>();
-        }
-
-        private static Dictionary<string, string> ReadSource(IDictionarySource source)
-        {
-            var dict = new Dictionary<string, string>(StringComparer.Ordinal);
-            try
-            {
-                foreach (var kv in source.ReadEntries(new List<IDictionaryEntryError>(), new Dictionary<string, int>()))
-                {
-                    if (kv.Key != null && kv.Value != null)
-                    {
-                        dict[kv.Key] = kv.Value;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Mod.Log.Warn("Read localization source " + source.GetType().FullName + " failed: " + ex.Message);
-            }
-            return dict;
         }
     }
 }
