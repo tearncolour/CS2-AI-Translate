@@ -12,7 +12,8 @@
     <Copyright>MeroT</Copyright>
     <Nullable>disable</Nullable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- 需要把 0Harmony.dll 复制到输出目录（资产编辑器标题翻译用，和其他 mod 用同一个版本，不需要前置 mod） -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
     <!-- 游戏安装目录，可通过 dotnet build -p:CS2Path=... 覆盖 -->
@@ -39,6 +40,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,6 +62,7 @@
   <Target Name="DeployToGameFolder" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
     <MakeDir Directories="$(DeployDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DeployDir)" />
+    <Copy SourceFiles="$(TargetDir)0Harmony.dll" DestinationFolder="$(DeployDir)" Condition="Exists('$(TargetDir)0Harmony.dll')" />
     <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(DeployDir)" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
     <Message Importance="high" Text="已部署到 $(DeployDir)" />
   </Target>

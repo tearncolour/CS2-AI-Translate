@@ -30,6 +30,14 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // 资产编辑器标签的真实数据检查（见 Bench.cs）：EDITOR_MANAGED=<游戏的 Managed 目录> BENCH_GAME_TEXT=<含官方 en-US.json / zh-HANS.json 的目录>。
+        string editorManaged = Environment.GetEnvironmentVariable("EDITOR_MANAGED");
+        if (!string.IsNullOrEmpty(editorManaged))
+        {
+            Bench.EditorLabelsCheck(editorManaged, Environment.GetEnvironmentVariable("BENCH_GAME_TEXT"));
+            return 0;
+        }
+
         // 性能基准（见 Bench.cs）。
         string benchGame = Environment.GetEnvironmentVariable("BENCH_GAME");
         if (!string.IsNullOrEmpty(benchGame))
@@ -306,6 +314,16 @@ internal static class Program
         Check(ChatClient.NormalizeEndpoint("https://api.deepseek.com") == "https://api.deepseek.com/chat/completions", "endpoint base");
         Check(ChatClient.NormalizeEndpoint("api.deepseek.com/v1/") == "https://api.deepseek.com/v1/chat/completions", "endpoint v1");
         Check(ChatClient.NormalizeEndpoint("https://x.com/v1/chat/completions") == "https://x.com/v1/chat/completions", "endpoint full");
+
+        // 资产编辑器标签：和游戏的 NicifyVariableName 一致，键和游戏的 Editor.FIELD 键同格式。
+        Check(EditorLabels.Nicify("m_LotWidth") == "Lot Width", "editor label: m_LotWidth → " + EditorLabels.Nicify("m_LotWidth"));
+        Check(EditorLabels.Nicify("SpawnableBuilding") == "Spawnable Building", "editor label: component name");
+        Check(EditorLabels.Nicify("m_FoamFadeRange") == "Foam Fade Range", "editor label: three words");
+        Check(EditorLabels.Nicify("m_Level2Cost") == "Level 2 Cost", "editor label: digits get a space → " + EditorLabels.Nicify("m_Level2Cost"));
+        Check(EditorLabels.Nicify("GetSpeedLimit") == "Speed Limit", "editor label: Get prefix dropped");
+        Check(EditorLabels.FieldKey(typeof(AITranslate.Core.EditorLabels), "m_X") == "Editor.FIELD[AITranslate.Core.EditorLabels.m_X]", "editor label: field key format");
+        Check(EditorLabels.FieldKey(typeof(EditorLabels.Result), "m_X") == "Editor.FIELD[AITranslate.Core.EditorLabels.Result.m_X]", "editor label: nested type key uses Outer.Inner");
+        Check(EditorLabels.TypeKey("SpawnableBuilding") == "Editor.TYPE[SpawnableBuilding]", "editor label: type key");
 
         // 分帧复制：预算用完就让出一帧，集合在两帧之间被改动时从头重来，最后一次一帧复制完。
         {

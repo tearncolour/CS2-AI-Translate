@@ -113,6 +113,9 @@ namespace AITranslate.Core
         /// <summary>运行环境已稳定（I18N 已加载完，或已确定没有 I18N）。</summary>
         public bool Settled;
 
+        /// <summary>资产编辑器检查器里的文字：词典键 → 英文标签（开启「翻译资产编辑器界面」时才采集）。</summary>
+        public Dictionary<string, string> EditorEntries = new Dictionary<string, string>(StringComparer.Ordinal);
+
         /// <summary>Road Builder 生成的道路/小路：prefab 名（GUID-SteamID）→ 用户在 Road Builder 里起的名字。</summary>
         public Dictionary<string, string> RoadBuilderNames = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -233,6 +236,21 @@ namespace AITranslate.Core
             var lm = GameManager.instance.localizationManager;
             m_Snapshot.Locale = lm.activeLocaleId;
             m_Snapshot.FallbackLocale = lm.fallbackLocaleId;
+
+            // 资产编辑器的字段和组件：只读类型元数据，放到后台线程枚举。程序集列表在主线程取（游戏本体 + 已加载的 mod）。
+            Task<EditorLabels.Result> editorLabels = null;
+            if (Mod.Setting?.IncludeEditorUi == true)
+            {
+                var assemblies = new List<Assembly> { typeof(Game.Prefabs.ComponentBase).Assembly };
+                foreach (ModManager.ModInfo info in GameManager.instance.modManager)
+                {
+                    if (info?.asset?.assembly != null && info.asset.assembly != typeof(ScanCapture).Assembly)
+                    {
+                        assemblies.Add(info.asset.assembly);
+                    }
+                }
+                editorLabels = Task.Run(() => EditorLabels.CollectCached(assemblies));
+            }
 
             // Road Builder 的道路名称在它自己的 JSON 文件里：纯文件读取，放到后台线程，最后再取结果。
             Task<Dictionary<string, string>> roadBuilder = Mod.Setting?.IncludeRoadBuilderRoads == true
@@ -402,6 +420,23 @@ namespace AITranslate.Core
                 if (roadBuilder.Status == TaskStatus.RanToCompletion)
                 {
                     m_Snapshot.RoadBuilderNames = roadBuilder.Result;
+                }
+            }
+            if (editorLabels != null)
+            {
+                SetStage("editor labels");
+                while (!editorLabels.IsCompleted)
+                {
+                    yield return true;
+                }
+                if (editorLabels.Status == TaskStatus.RanToCompletion)
+                {
+                    m_Snapshot.EditorEntries = editorLabels.Result.Entries;
+                    EditorLabels.SetKnownTypeNames(editorLabels.Result.TypeNames);
+                }
+                else
+                {
+                    Mod.Log.Warn("Collecting asset editor labels failed: " + editorLabels.Exception?.GetBaseException().Message);
                 }
             }
             SetStage("done");

@@ -145,6 +145,10 @@ namespace AITranslate.Core
         private const string kRoadBuilderKey = "mod_RoadBuilder";
         private const string kRoadBuilderDisplayName = "Road Builder";
 
+        /// <summary>资产编辑器界面文字的分组键。</summary>
+        internal const string kEditorKey = "editor_ui";
+        private const string kEditorDisplayName = "Asset Editor UI";
+
         /// <summary>DLC/创作者包分组键的前缀（后接 ContentPrefab 名）。</summary>
         private const string kContentPackPrefix = "dlc_";
 
@@ -504,6 +508,11 @@ namespace AITranslate.Core
             // 3. 根本没有名称条目的资产：游戏会直接显示内部预制件名，这里补上可翻译的名称。
             Phase("lang files");
             result.UnnamedAssets = CollectUnnamedAssets(result, store);
+            if (m_Snapshot.EditorEntries.Count > 0)
+            {
+                // 编辑器字段名/组件名：官方已有译文的在分类时算“已有译文”，不会重复翻译。
+                Merge(result, new Owner { Key = kEditorKey, Name = kEditorDisplayName }, m_Snapshot.EditorEntries, overwrite: false);
+            }
             Phase("assets");
             AssignCategories(result);
             result.ProtectedNames = BuildProtectedNames(result);   // 需要先知道哪些是代码 mod

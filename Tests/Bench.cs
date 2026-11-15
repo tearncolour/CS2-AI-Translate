@@ -151,6 +151,37 @@ internal static class Bench
         File.Delete(tmp);
     }
 
+    /// <summary>用真实的 Game.dll 枚举资产编辑器标签，并和官方已有的 Editor.FIELD 键对比（验证键的格式）。</summary>
+    public static void EditorLabelsCheck(string managedDir, string gameDir)
+    {
+        AppDomain.CurrentDomain.AssemblyResolve += (_, args) =>
+        {
+            string file = Path.Combine(managedDir, new System.Reflection.AssemblyName(args.Name).Name + ".dll");
+            return File.Exists(file) ? System.Reflection.Assembly.LoadFrom(file) : null;
+        };
+        var game = System.Reflection.Assembly.LoadFrom(Path.Combine(managedDir, "Game.dll"));
+        var sw = Stopwatch.StartNew();
+        var result = EditorLabels.Collect(new[] { game });
+        Console.WriteLine($"editor labels: {result.Entries.Count} entries ({result.TypeNames.Count} component types) in {sw.ElapsedMilliseconds} ms, skipped {result.Skipped} unreadable types/fields");
+
+        var en = Load(Path.Combine(gameDir, "en-US.json"));
+        var zh = Load(Path.Combine(gameDir, "zh-HANS.json"));
+        var official = en.Keys.Where(k => k.StartsWith("Editor.FIELD[")).ToList();
+        int hit = official.Count(k => result.Entries.ContainsKey(k));
+        Console.WriteLine($"official Editor.FIELD keys: {official.Count}, produced: {hit}");
+        foreach (string k in official.Where(k => !result.Entries.ContainsKey(k)).Take(30))
+        {
+            Console.WriteLine("  not produced: " + k);
+        }
+        int needTranslation = result.Entries.Keys.Count(k => !zh.ContainsKey(k));
+        Console.WriteLine($"entries without an official zh-HANS translation: {needTranslation}");
+        foreach (var kv in result.Entries.Where(kv => !zh.ContainsKey(kv.Key)).OrderBy(_ => Guid.NewGuid()).Take(12))
+        {
+            Console.WriteLine("  " + kv.Key + " = " + kv.Value);
+        }
+        Console.WriteLine("type keys sample: " + string.Join(", ", result.Entries.Where(kv => kv.Key.StartsWith("Editor.TYPE[")).Take(6).Select(kv => kv.Value)));
+    }
+
     private static Dictionary<string, string> Load(string path) =>
         JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path)) ?? new Dictionary<string, string>();
 

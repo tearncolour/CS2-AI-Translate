@@ -124,6 +124,16 @@ namespace AITranslate.Core
         public bool IsJobRunning => m_Busy;
 
         // 概况里「对全部 mod 的操作」按钮：有事可做时才显示。
+        /// <summary>当前语言下某条文字的译文（本 mod 写入的，没有则读游戏词典）。资产编辑器的组件标题补丁用它查询。主线程调用。</summary>
+        public bool TryGetLiveText(string key, out string text)
+        {
+            if (m_Live.TryGetValue(key, out text))
+            {
+                return true;
+            }
+            return Localization != null && Localization.activeDictionary.TryGetValue(key, out text);
+        }
+
         public bool HasPendingMods => m_Scan != null && m_Scan.Mods.Values.Any(m => m.State == ModState.NeedsTranslation);
 
         public bool HasSuspicious => m_Quality.Values.Any(q => q.Suspicious > 0);
@@ -354,7 +364,7 @@ namespace AITranslate.Core
             int sources = ScanCapture.CountSources(lm, lm.fallbackLocaleId);
             bool i18n = m_I18N.Available && m_I18N.IsInitialized;
             // 翻译范围的开关也算在内：切换后重新检测。
-            return $"{mods}|{sources}|{i18n}|{lm.activeLocaleId}|{m_Setting.IncludeDlcContent}|{m_Setting.IncludeRoadBuilderRoads}";
+            return $"{mods}|{sources}|{i18n}|{lm.activeLocaleId}|{m_Setting.IncludeDlcContent}|{m_Setting.IncludeRoadBuilderRoads}|{m_Setting.IncludeEditorUi}";
         }
 
         /// <summary>I18N Everywhere 已加载完成但尚未接入时立即接入（任何检测之前都要先做，否则结果不准）。</summary>
@@ -478,6 +488,8 @@ namespace AITranslate.Core
                 Mod.Log.Warn("Prepare scan failed: " + ex.Message);
             }
 
+            EnsureEditorPatches();
+
             var total = Stopwatch.StartNew();
             var bridge = m_I18N ?? I18NBridge.Locate();
             var capture = new ScanCapture(m_PlaysetMods, bridge);
@@ -517,6 +529,31 @@ namespace AITranslate.Core
                 return true;
             });
         }
+
+        private bool m_EditorPatchDone;
+
+        /// <summary>开启了「翻译资产编辑器界面」时，安装让组件标题显示译文的补丁（只装一次）。缺少 Harmony 或游戏变了就只记一条日志，字段名的翻译不受影响。</summary>
+        private void EnsureEditorPatches()
+        {
+            if (!m_Setting.IncludeEditorUi || m_EditorPatchDone)
+            {
+                return;
+            }
+            m_EditorPatchDone = true; // 成功或失败都只试一次
+            try
+            {
+                InstallEditorPatch();
+                Mod.Log.Info("Asset editor title patch installed");
+            }
+            catch (Exception ex)
+            {
+                Mod.Log.Warn("Asset editor title patch unavailable (component titles stay in English): " + ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        // 单独一个方法：EditorPatches 引用了 Harmony，缺少 0Harmony.dll 时错误只会出在这里（上面的 try 里）。
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void InstallEditorPatch() => EditorPatches.Install();
 
         private void AnalyzeInBackground(ScanSnapshot snapshot, I18NBridge bridge, Stopwatch total, int attempt)
         {
@@ -1342,6 +1379,7 @@ namespace AITranslate.Core
             var keys = m_Scan.Mods.Values
                 .Where(m => m.State == ModState.NeedsTranslation)
                 .Where(m => !fromStartup || !m_Setting.AutoTranslateSkipLarge || m.Pending.Count <= kLargeModThreshold)
+                .Where(m => !fromStartup || m.Key != ModScanner.kEditorKey) // 编辑器界面条目很多，只在玩家手动点翻译时处理
                 .OrderByDescending(m => m.Key == ModScanner.kSelfKey) // 先翻本 mod 自己的界面
                 .ThenBy(m => m.Pending.Count)
                 .Select(m => m.Key)
@@ -1436,6 +1474,7 @@ namespace AITranslate.Core
                 .Where(m => !m_AutoAttempted.Contains(m.Key) && !m_AutoQueue.Contains(m.Key))
                 .Where(m => m.Pending.Count > 0 || (m_Setting.AutoDescribe && m.MissingDescriptions.Count > 0))
                 .Where(m => !m_Setting.AutoTranslateSkipLarge || m.Pending.Count <= kLargeModThreshold)
+                .Where(m => m.Key != ModScanner.kEditorKey) // 编辑器界面条目很多，只在玩家手动点翻译时处理
                 .Select(m => m.Key)
                 .Distinct()
                 .ToList();

@@ -30,6 +30,8 @@ $content = Join-Path $root 'bin\PublishContent'
 if (Test-Path $content) { Remove-Item $content -Recurse -Force }
 New-Item -ItemType Directory $content | Out-Null
 Copy-Item (Join-Path $root 'bin\Release\AITranslate.dll') $content
+# 资产编辑器标题翻译用的 Harmony（和其他 mod 同一个版本）
+Copy-Item (Join-Path $root 'bin\Release\0Harmony.dll') $content
 Copy-Item (Join-Path $root 'bin\Release\AITranslate.pdb') $content -ErrorAction SilentlyContinue
 
 $publishArgs = @($Command, $config, '-c', $content, '-v')
