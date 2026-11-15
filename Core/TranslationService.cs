@@ -1379,7 +1379,7 @@ namespace AITranslate.Core
             var keys = m_Scan.Mods.Values
                 .Where(m => m.State == ModState.NeedsTranslation)
                 .Where(m => !fromStartup || !m_Setting.AutoTranslateSkipLarge || m.Pending.Count <= kLargeModThreshold)
-                .Where(m => !fromStartup || m.Key != ModScanner.kEditorKey) // 编辑器界面条目很多，只在玩家手动点翻译时处理
+                .Where(m => !fromStartup || !ModScanner.IsEditorGroup(m.Key)) // 编辑器界面条目很多，只在玩家手动点翻译时处理
                 .OrderByDescending(m => m.Key == ModScanner.kSelfKey) // 先翻本 mod 自己的界面
                 .ThenBy(m => m.Pending.Count)
                 .Select(m => m.Key)
@@ -1474,7 +1474,7 @@ namespace AITranslate.Core
                 .Where(m => !m_AutoAttempted.Contains(m.Key) && !m_AutoQueue.Contains(m.Key))
                 .Where(m => m.Pending.Count > 0 || (m_Setting.AutoDescribe && m.MissingDescriptions.Count > 0))
                 .Where(m => !m_Setting.AutoTranslateSkipLarge || m.Pending.Count <= kLargeModThreshold)
-                .Where(m => m.Key != ModScanner.kEditorKey) // 编辑器界面条目很多，只在玩家手动点翻译时处理
+                .Where(m => !ModScanner.IsEditorGroup(m.Key)) // 编辑器界面条目很多，只在玩家手动点翻译时处理
                 .Select(m => m.Key)
                 .Distinct()
                 .ToList();

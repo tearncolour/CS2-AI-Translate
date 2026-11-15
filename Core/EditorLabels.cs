@@ -22,6 +22,7 @@ namespace AITranslate.Core
     {
         public const string kFieldPrefix = "Editor.FIELD[";
         public const string kTypePrefix = "Editor.TYPE[";
+        public const string kTooltipPrefix = "Editor.FIELD_TOOLTIP[";
 
         private static readonly Regex s_Words = new Regex(@"\B([A-Z][a-z])", RegexOptions.Compiled);
         private static readonly Regex s_Camel = new Regex(@"([^A-Z\s])([A-Z])", RegexOptions.Compiled);
@@ -78,6 +79,64 @@ namespace AITranslate.Core
 
         public static string TypeKey(string typeName) => kTypePrefix + typeName + "]";
 
+        public static string TooltipKey(Type declaring, string member) => kTooltipPrefix + TypeName(declaring) + "." + member + "]";
+
+        /// <summary>
+        /// 悬停说明的“原文”：游戏对没写说明的字段显示原始变量名，没有英文可译。这里用字段名、类型、所属组件拼一句英文，
+        /// 翻译时由模型据此写一句说明（提示词里有专门的规则）。
+        /// </summary>
+        public static string TooltipSource(Type declaring, FieldInfo field, string label) =>
+            label + ": " + DescribeType(field.FieldType) + " field of " + Nicify(declaring.Name) + " in the asset editor";
+
+        private static string DescribeType(Type type)
+        {
+            Type element = ElementOf(type);
+            if (!ReferenceEquals(element, type))
+            {
+                return "list of " + DescribeType(element) + " values";
+            }
+            if (type == typeof(bool))
+            {
+                return "on/off switch";
+            }
+            if (type == typeof(string))
+            {
+                return "text";
+            }
+            if (type == typeof(float) || type == typeof(double))
+            {
+                return "decimal number";
+            }
+            if (type == typeof(int) || type == typeof(uint) || type == typeof(short) || type == typeof(ushort) || type == typeof(long) || type == typeof(byte))
+            {
+                return "integer number";
+            }
+            if (type.IsEnum)
+            {
+                string[] names = Enum.GetNames(type);
+                string options = string.Join(", ", names.Take(10).Select(Nicify)) + (names.Length > 10 ? ", …" : string.Empty);
+                return Nicify(type.Name) + " choice (" + options + ")";
+            }
+            if (type == typeof(Color) || type == typeof(Color32))
+            {
+                return "color";
+            }
+            string name = type.Name;
+            if (name == "Bounds1" || name == "Bounds2" || name == "Bounds3")
+            {
+                return "min/max range";
+            }
+            if (name.Length == 6 && name.StartsWith("float", StringComparison.Ordinal) && char.IsDigit(name[5]))
+            {
+                return name[5] + "-component decimal vector";
+            }
+            if (name.Length == 4 && name.StartsWith("int", StringComparison.Ordinal) && char.IsDigit(name[3]))
+            {
+                return name[3] + "-component integer vector";
+            }
+            return Nicify(type.Name) + " value";
+        }
+
         /// <summary>Colossal 的 TypeName(includeNamespace: true)：嵌套类型写成 外层.内层。</summary>
         private static string TypeName(Type type)
         {
@@ -93,6 +152,9 @@ namespace AITranslate.Core
         {
             public readonly Dictionary<string, string> Entries = new Dictionary<string, string>(StringComparer.Ordinal);
             public readonly HashSet<string> TypeNames = new HashSet<string>(StringComparer.Ordinal);
+
+            /// <summary>悬停说明：Editor.FIELD_TOOLTIP[...] 键 → 供模型据此写说明的英文描述。官方没有写说明的字段才有。</summary>
+            public readonly Dictionary<string, string> Tooltips = new Dictionary<string, string>(StringComparer.Ordinal);
 
             /// <summary>元数据读不出来、被跳过的类型数（诊断用）。</summary>
             public int Skipped;
@@ -217,6 +279,11 @@ namespace AITranslate.Core
                         if (label.Length >= 2)
                         {
                             result.Entries[FieldKey(t, field.Name)] = label;
+                            // 字段上有 [Tooltip] 的，说明文字另有来源（特性里写的词典键），这里不碰。
+                            if (!field.IsDefined(typeof(TooltipAttribute), false))
+                            {
+                                result.Tooltips[TooltipKey(t, field.Name)] = TooltipSource(t, field, label);
+                            }
                         }
                         Type inner = ElementOf(field.FieldType);
                         if (inner != null && IsGroup(inner, gameAssemblies))

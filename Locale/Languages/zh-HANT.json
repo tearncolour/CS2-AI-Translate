@@ -20,7 +20,7 @@
   "DESC:FixMixedSelectedMod": "把這個模組（或遊戲本體）內建譯文中未翻譯的英文翻譯出來。修改另外儲存，不會更動原檔案。",
   "DESC:FollowGameLanguageOptions": "有些模組的語言選項設為 English 時不會顯示譯文；開啟後會自動改為跟隨遊戲。",
   "DESC:IncludeDlcContent": "把你擁有的 DLC 與創作者包也納入翻譯範圍，每個包單獨列出：只有英文的名稱與描述會被翻譯，沒有描述的資產會補寫簡介。官方已有的譯文保持不變。",
-  "DESC:IncludeEditorUi": "把資產編輯器檢查器裡的欄位名與元件名納入翻譯範圍（列在「Asset Editor UI」下）。條目很多，需要手動點「翻譯」，不會自動翻譯。",
+  "DESC:IncludeEditorUi": "把資產編輯器檢查器裡的欄位名、元件名與欄位的懸停說明納入翻譯範圍（分別列在「Asset Editor UI」與「Asset Editor Tooltips」下）。官方沒有寫說明的欄位，會由 AI 依欄位名寫一句說明。條目很多，需要手動點「翻譯」，不會自動翻譯。",
   "DESC:IncludeRoadBuilderRoads": "翻譯及描述 Road Builder 生成的道路。道路名稱會被翻譯，並自動生成一句描述。",
   "DESC:LogShowSamples": "在每批結果下方顯示一兩條原文和譯文。",
   "DESC:ModelName": "DeepSeek 使用 deepseek-flash 即可。",

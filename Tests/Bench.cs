@@ -179,6 +179,12 @@ internal static class Bench
         {
             Console.WriteLine("  " + kv.Key + " = " + kv.Value);
         }
+        var officialTips = en.Keys.Where(k => k.StartsWith("Editor.FIELD_TOOLTIP[")).ToList();
+        Console.WriteLine($"tooltips: {result.Tooltips.Count} generated; official tooltip keys {officialTips.Count}, matched {officialTips.Count(k => result.Tooltips.ContainsKey(k))}; need writing: {result.Tooltips.Keys.Count(k => !zh.ContainsKey(k))}");
+        foreach (var kv in result.Tooltips.Where(kv => !zh.ContainsKey(kv.Key)).OrderBy(_ => Guid.NewGuid()).Take(10))
+        {
+            Console.WriteLine("  " + kv.Key + " => " + kv.Value);
+        }
         Console.WriteLine("type keys sample: " + string.Join(", ", result.Entries.Where(kv => kv.Key.StartsWith("Editor.TYPE[")).Take(6).Select(kv => kv.Value)));
     }
 

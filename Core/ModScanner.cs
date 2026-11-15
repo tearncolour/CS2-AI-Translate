@@ -149,6 +149,13 @@ namespace AITranslate.Core
         internal const string kEditorKey = "editor_ui";
         private const string kEditorDisplayName = "Asset Editor UI";
 
+        /// <summary>资产编辑器字段悬停说明的分组键（单独一组：条数多、花费高，玩家可以只翻字段名）。</summary>
+        internal const string kEditorTipsKey = "editor_tips";
+        private const string kEditorTipsDisplayName = "Asset Editor Tooltips";
+
+        /// <summary>资产编辑器相关分组：条目很多，只在玩家手动点翻译时处理，不参与自动翻译。</summary>
+        internal static bool IsEditorGroup(string key) => key == kEditorKey || key == kEditorTipsKey;
+
         /// <summary>DLC/创作者包分组键的前缀（后接 ContentPrefab 名）。</summary>
         private const string kContentPackPrefix = "dlc_";
 
@@ -512,6 +519,10 @@ namespace AITranslate.Core
             {
                 // 编辑器字段名/组件名：官方已有译文的在分类时算“已有译文”，不会重复翻译。
                 Merge(result, new Owner { Key = kEditorKey, Name = kEditorDisplayName }, m_Snapshot.EditorEntries, overwrite: false);
+            }
+            if (m_Snapshot.EditorTooltips.Count > 0)
+            {
+                Merge(result, new Owner { Key = kEditorTipsKey, Name = kEditorTipsDisplayName }, m_Snapshot.EditorTooltips, overwrite: false);
             }
             Phase("assets");
             AssignCategories(result);
@@ -1437,7 +1448,9 @@ namespace AITranslate.Core
         }
 
         /// <summary>格式固定的条目（拼出的建筑名、设置页标题）：不做质量检查、不送审校。</summary>
-        internal static bool IsFixedFormat(string key, string source) => IsModTitleKey(key) || TemplateForEntry(key, source) != null;
+        internal static bool IsFixedFormat(string key, string source) =>
+            IsModTitleKey(key) || TemplateForEntry(key, source) != null
+            || (key != null && key.StartsWith(EditorLabels.kTooltipPrefix, StringComparison.Ordinal)); // 原文只是字段描述，译文是模型写的说明：长度对不上，不做质量检查/审校
 
         /// <summary>
         /// 由内部名拼出的资产名，译文必须等于“统一的类型短语译名 + 后缀”（与原版格式一致，同类叫法统一）；

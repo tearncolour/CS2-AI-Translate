@@ -116,6 +116,9 @@ namespace AITranslate.Core
         /// <summary>资产编辑器检查器里的文字：词典键 → 英文标签（开启「翻译资产编辑器界面」时才采集）。</summary>
         public Dictionary<string, string> EditorEntries = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        /// <summary>资产编辑器字段的悬停说明：词典键 → 英文描述（模型据此写说明）。</summary>
+        public Dictionary<string, string> EditorTooltips = new Dictionary<string, string>(StringComparer.Ordinal);
+
         /// <summary>Road Builder 生成的道路/小路：prefab 名（GUID-SteamID）→ 用户在 Road Builder 里起的名字。</summary>
         public Dictionary<string, string> RoadBuilderNames = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -432,6 +435,7 @@ namespace AITranslate.Core
                 if (editorLabels.Status == TaskStatus.RanToCompletion)
                 {
                     m_Snapshot.EditorEntries = editorLabels.Result.Entries;
+                    m_Snapshot.EditorTooltips = editorLabels.Result.Tooltips;
                     EditorLabels.SetKnownTypeNames(editorLabels.Result.TypeNames);
                 }
                 else

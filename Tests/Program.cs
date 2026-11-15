@@ -324,6 +324,11 @@ internal static class Program
         Check(EditorLabels.FieldKey(typeof(AITranslate.Core.EditorLabels), "m_X") == "Editor.FIELD[AITranslate.Core.EditorLabels.m_X]", "editor label: field key format");
         Check(EditorLabels.FieldKey(typeof(EditorLabels.Result), "m_X") == "Editor.FIELD[AITranslate.Core.EditorLabels.Result.m_X]", "editor label: nested type key uses Outer.Inner");
         Check(EditorLabels.TypeKey("SpawnableBuilding") == "Editor.TYPE[SpawnableBuilding]", "editor label: type key");
+        Check(EditorLabels.TooltipKey(typeof(EditorLabels.Result), "m_X") == "Editor.FIELD_TOOLTIP[AITranslate.Core.EditorLabels.Result.m_X]", "editor tooltip: key format");
+        Check(ModScanner.IsFixedFormat("Editor.FIELD_TOOLTIP[A.b]", "Lot Width: integer number field of Building Prefab in the asset editor"), "editor tooltip: fixed format, no quality check");
+        Check(!ModScanner.IsFixedFormat("Editor.FIELD[A.b]", "Lot Width"), "editor label: normal entry still quality-checked");
+        Check(ModScanner.IsEditorGroup(ModScanner.kEditorKey) && ModScanner.IsEditorGroup(ModScanner.kEditorTipsKey) && !ModScanner.IsEditorGroup("pdx_1"), "editor groups are excluded from automatic translation");
+        Check(TextRules.IsTranslatable("Lot Width: integer number field of Building Prefab in the asset editor", "zh-HANS"), "editor tooltip: source counts as translatable");
 
         // 分帧复制：预算用完就让出一帧，集合在两帧之间被改动时从头重来，最后一次一帧复制完。
         {

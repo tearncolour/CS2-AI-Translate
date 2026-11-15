@@ -20,7 +20,7 @@
   "DESC:FixMixedSelectedMod": "이 모드(또는 기본 게임) 자체 번역에 남아 있는 영어를 번역합니다. 수정 내용은 따로 저장됩니다.",
   "DESC:FollowGameLanguageOptions": "일부 모드는 자체 언어 옵션이 English이면 번역을 무시합니다. 켜면 해당 옵션을 게임 언어에 맞춥니다.",
   "DESC:IncludeDlcContent": "보유한 DLC와 크리에이터 팩도 번역 대상에 넣고 팩마다 따로 표시합니다. 영어로만 된 이름과 설명을 번역하고, 설명이 없는 에셋에는 설명을 작성합니다. 공식 번역은 그대로 둡니다.",
-  "DESC:IncludeEditorUi": "에셋 에디터 인스펙터에 표시되는 필드 이름과 컴포넌트 이름도 번역 대상에 넣습니다(「Asset Editor UI」로 표시). 항목이 매우 많아 자동으로 번역되지 않으니 직접 「번역」을 누르세요.",
+  "DESC:IncludeEditorUi": "에셋 에디터 인스펙터에 표시되는 필드 이름, 컴포넌트 이름, 마우스 오버 툴팁도 번역 대상에 넣습니다(「Asset Editor UI」와 「Asset Editor Tooltips」로 표시). 게임에 툴팁이 없는 필드는 AI가 필드 이름을 보고 짧은 설명을 작성합니다. 항목이 매우 많아 자동으로 번역되지 않으니 직접 「번역」을 누르세요.",
   "DESC:IncludeRoadBuilderRoads": "Road Builder로 생성된 도로를 번역하고 설명합니다. 이름이 번역되고 짧은 설명이 자동으로 생성됩니다.",
   "DESC:LogShowSamples": "각 배치 아래에 원문과 번역 예시를 한두 개 표시합니다.",
   "DESC:ModelName": "DeepSeek은 deepseek-flash를 사용하면 됩니다.",

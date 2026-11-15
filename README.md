@@ -21,7 +21,7 @@ AI Translate! finds every bit of mod text that isn't in your game language yet (
 - Patches official/bundled translations that left English words behind (only if the change really removes English).
 - Scanning is time-sliced and runs in the background, so the game doesn't freeze.
 - The settings page itself comes in all 12 game languages; other languages are translated automatically once an API key is set.
-- Optional (off by default): the DLC and creator packs you own, roads made with Road Builder, and the asset editor (field and component names in the inspector, about 3,500 entries; translate them from the "Asset Editor UI" entry). Component titles in the editor need the bundled 0Harmony.dll.
+- Optional (off by default): the DLC and creator packs you own, roads made with Road Builder, and the asset editor (field names, component names and hover tooltips in the inspector, about 6,000 entries; translate them from the "Asset Editor UI" and "Asset Editor Tooltips" entries; tooltips the game does not have are written by the AI from the field name). Component titles in the editor need the bundled 0Harmony.dll.
 
 Some mods and asset packs only load their text once a city is open. If a mod isn't translated, load a save, click *Rescan* on the Advanced tab and translate again.
 
@@ -41,7 +41,7 @@ AI Translate! 会找出 mod 里还不是你游戏语言的文字（设置页、�
 - 修正官方或自带译文里漏翻的英文（只采用真正减少了英文的改写）。
 - 检测分帧、放在后台进行，不卡游戏。
 - 设置页本身预置游戏的全部 12 种语言；其他语言填好 API Key 后自动翻译。
-- 可选（默认关闭）：你拥有的 DLC 和创作者包、Road Builder 建的道路，以及资产编辑器（检查器里的字段名和组件名，约 3500 条，在「Asset Editor UI」条目里翻译）。编辑器里的组件标题要靠随包的 0Harmony.dll。
+- 可选（默认关闭）：你拥有的 DLC 和创作者包、Road Builder 建的道路，以及资产编辑器（检查器里的字段名、组件名和悬停说明，约 6000 条，在「Asset Editor UI」和「Asset Editor Tooltips」条目里翻译；游戏没有的悬停说明由 AI 根据字段名来写）。编辑器里的组件标题要靠随包的 0Harmony.dll。
 
 有些 mod 和资产包要进入存档后才加载文本。如果某个 mod 没被翻译，请进入存档，到「高级」页点「重新检测」，再翻译一次。
 

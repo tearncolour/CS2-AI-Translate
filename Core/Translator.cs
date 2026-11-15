@@ -133,6 +133,7 @@ namespace AITranslate.Core
 7. key 仅作上下文参考（可据此判断是标题、选项、描述、提示还是资产名），不要翻译 key。若原文本身是代码标识、文件路径、URL 或无意义字符串，原样返回。
 8. 资产名称（key 以 Assets.NAME 或 Assets.UPGRADE_NAME 开头）可能是由内部文件名拆分而来（如 “CS Bank Tower Tall 01”、“EU Bus Stop 02”），请整理成玩家看得懂的自然中文资产名，保留编号、品牌和型号。按游戏官方格式：等级写作 L1~L5、占地写作 2x4（不要写成“3级”“2×4”），地区代码 EU=欧洲、NA=北美、CN=中国、JP=日本、EE=东欧、UK=英国、FR=法国、DE=德国、NL=荷兰、USNE=美国东北部、USSW=美国西南部，Low/Medium/High 在建筑名里是低层/中层/高层；Bonus、Extra、Req、ProcReq、Details、Random 等是作者的内部标记，直接去掉，不要翻译成“奖励”“额外”之类的词。
 9. 资产编辑器的标签（key 以 Editor.FIELD 或 Editor.TYPE 开头）是资产编辑器检查器里的字段名和组件名，原文由代码标识符拆开而来（如 “Lot Width”“Spawnable Building”“Max Speed”）。译成简短的名词性短语，不加句号；同一个词在不同字段里译法一致；Prefab、Mesh、LOD、UI、ID 等技术缩写保留英文。
+10. key 以 Editor.FIELD_TOOLTIP 开头的条目是资产编辑器里字段的悬停说明。原文不是说明，只是字段的描述，格式为“字段名: 类型 field of 组件 in the asset editor”。请根据字段名、类型和所属组件，用一句简短自然的中文写出这个字段的作用（不超过 40 字，句末加句号）；不要复述原文，不要编造具体数值、范围或默认值；拿不准时只说明它大致控制什么。
 
 【输出格式】
 只输出一个 JSON 对象，形如 {""1"":""译文"",""2"":""译文""}，必须包含输入 items 中的全部 id，不要输出任何解释或多余内容。");
@@ -154,6 +155,7 @@ namespace AITranslate.Core
 7. key 僅作上下文參考，不要翻譯 key。原文若為代碼識別字、檔案路徑、URL，原樣返回。
 8. 資產名稱（key 以 Assets.NAME 或 Assets.UPGRADE_NAME 開頭）可能由內部檔名拆分而來（如「CS Bank Tower Tall 01」），請整理成自然的中文資產名，保留編號、品牌與型號。依遊戲官方格式：等級寫作 L1~L5、占地寫作 2x4，地區代碼 EU=歐洲、NA=北美、CN=中國、JP=日本、EE=東歐、USNE=美國東北部、USSW=美國西南部，Low/Medium/High 在建築名中是低層/中層/高層；Bonus、Extra、Req、ProcReq、Details、Random 等是作者的內部標記，直接去掉。
 9. 資產編輯器的標籤（key 以 Editor.FIELD 或 Editor.TYPE 開頭）是資產編輯器檢查器裡的欄位名與元件名，原文由程式識別字拆開而來（如 “Lot Width”“Spawnable Building”）。譯成簡短的名詞片語，不加句號；同一個詞在不同欄位譯法一致；Prefab、Mesh、LOD、UI、ID 等技術縮寫保留英文。
+10. key 以 Editor.FIELD_TOOLTIP 開頭的條目是資產編輯器裡欄位的懸停說明。原文不是說明，只是欄位的描述，格式為「欄位名: 類型 field of 元件 in the asset editor」。請根據欄位名、類型與所屬元件，用一句簡短自然的中文寫出這個欄位的作用（不超過 40 字，句末加句號）；不要複述原文，不要編造具體數值、範圍或預設值；拿不準時只說明它大致控制什麼。
 
 【輸出格式】
 只輸出一個 JSON 物件，形如 {""1"":""譯文"",""2"":""譯文""}，必須包含輸入 items 中的全部 id，不要輸出任何說明。");
@@ -177,9 +179,10 @@ Rules:
 7. The key is context only (title, option, description, tooltip, asset name…); never translate it. If the text is a code identifier, file path or URL, return it unchanged.");
                 sb.Append("\n8. Asset names (key starts with Assets.NAME or Assets.UPGRADE_NAME) may be split from internal file names (e.g. \"CS Bank Tower Tall 01\"); turn them into natural asset names, keep numbering, brands and model names, and drop meaningless prefix abbreviations. Follow the official format: keep level codes as L1–L5 and lot sizes as 2x4; region codes mean EU = Europe, NA = North America, CN = China, JP = Japan, EE = Eastern Europe, UK = United Kingdom, FR = France, DE = Germany, NL = Netherlands, USNE = USA Northeast, USSW = USA Southwest; Low/Medium/High in building names are low-rise/mid-rise/high-rise; Bonus, Extra, Req, ProcReq, Details and Random are internal author markers: drop them, never translate them as words like \"reward\".");
                 sb.Append("\n9. Asset editor labels (key starts with Editor.FIELD or Editor.TYPE) are the field and component names shown in the asset editor inspector, split from code identifiers (e.g. \"Lot Width\", \"Spawnable Building\", \"Max Speed\"). Translate them as short noun phrases without a final period, use the same wording for the same word across fields, and keep technical acronyms such as Prefab, Mesh, LOD, UI and ID.");
+                sb.Append("\n10. Entries whose key starts with Editor.FIELD_TOOLTIP are hover tooltips for asset editor fields. The source text is not a tooltip but a description of the field, in the form \"Field name: type field of Component in the asset editor\". From the field name, type and component, write one short, natural sentence in the target language saying what the field controls (at most about 15 words, ending with a period). Do not repeat the source, do not invent specific values, ranges or defaults, and if unsure only say roughly what it controls.");
                 if (s_LanguageNotes.TryGetValue(LanguageDetector.LanguageOf(locale), out var notes))
                 {
-                    sb.Append("\n10. Language-specific: ").Append(notes);
+                    sb.Append("\n11. Language-specific: ").Append(notes);
                 }
                 sb.Append(@"
 

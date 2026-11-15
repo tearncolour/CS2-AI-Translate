@@ -20,7 +20,7 @@
   "DESC:FixMixedSelectedMod": "Przetłumacz angielski tekst pozostały we własnych tłumaczeniach tego moda (lub gry podstawowej). Poprawki są zapisywane osobno.",
   "DESC:FollowGameLanguageOptions": "Niektóre mody ignorują tłumaczenia, gdy ich własna opcja języka to angielski; ta opcja przełącza ją na język gry.",
   "DESC:IncludeDlcContent": "Tłumaczy też posiadane DLC i Creator Packi, każdy wymieniony osobno: nazwy i opisy dostępne tylko po angielsku są tłumaczone, a obiekty bez opisu otrzymują opis. Oficjalne tłumaczenia pozostają bez zmian.",
-  "DESC:IncludeEditorUi": "Tłumaczy też nazwy pól i komponentów widoczne w inspektorze edytora zasobów (na liście jako „Asset Editor UI”). Wpisów jest dużo, więc nie są tłumaczone automatycznie; kliknij Tłumacz samodzielnie.",
+  "DESC:IncludeEditorUi": "Tłumaczy też nazwy pól i komponentów oraz podpowiedzi w inspektorze edytora zasobów (na liście jako „Asset Editor UI” i „Asset Editor Tooltips”). Dla pól, do których gra nie ma podpowiedzi, AI pisze krótką na podstawie nazwy pola. Wpisów jest dużo, więc nic nie jest tłumaczone automatycznie; kliknij Tłumacz samodzielnie.",
   "DESC:IncludeRoadBuilderRoads": "Tłumaczy i opisuje drogi wygenerowane przez Road Builder. Nazwy są tłumaczone, a krótki opis jest generowany automatycznie.",
   "DESC:LogShowSamples": "Pokazuj pod każdą partią jedną lub dwie próbki oryginału i tłumaczenia.",
   "DESC:ModelName": "Dla DeepSeek wystarczy deepseek-flash.",
