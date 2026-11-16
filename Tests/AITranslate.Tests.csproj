@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>9.0</LangVersion>
-    <CS2Path Condition="'$(CS2Path)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II</CS2Path>
+    <CS2Path Condition="'$(CS2Path)' == ''">D:\SteamLibrary\steamapps\common\Cities Skylines II</CS2Path>
     <CS2Managed>$(CS2Path)\Cities2_Data\Managed</CS2Managed>
   </PropertyGroup>
   <ItemGroup>

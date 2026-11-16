@@ -7,7 +7,7 @@ param(
     [string]$Email,
     [ValidateSet('Auto', 'Publish', 'NewVersion', 'Update')]
     [string]$Command = 'Auto',
-    [string]$GamePath = 'C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II'
+    [string]$GamePath = 'D:\SteamLibrary\steamapps\common\Cities Skylines II'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -24,7 +24,7 @@ if ($Command -eq 'Auto') {
 
 # 编译并整理上传内容（只包含 mod 本体）。
 Write-Host "Building..."
-dotnet build (Join-Path $root 'AITranslate.csproj') -c Release -p:DeployToGame=false | Out-Host
+dotnet build (Join-Path $root 'AITranslate.csproj') -c Release -p:DeployToGame=false "-p:CS2Path=$GamePath" | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "编译失败" }
 $content = Join-Path $root 'bin\PublishContent'
 if (Test-Path $content) { Remove-Item $content -Recurse -Force }

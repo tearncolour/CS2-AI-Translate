@@ -5,7 +5,7 @@
     <LangVersion>9.0</LangVersion>
     <AssemblyName>AITranslate</AssemblyName>
     <RootNamespace>AITranslate</RootNamespace>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>MeroT</Authors>
     <Company>MeroT</Company>
     <Product>AI Translate!</Product>
@@ -17,7 +17,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
     <!-- 游戏安装目录，可通过 dotnet build -p:CS2Path=... 覆盖 -->
-    <CS2Path Condition="'$(CS2Path)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II</CS2Path>
+    <CS2Path Condition="'$(CS2Path)' == ''">D:\SteamLibrary\steamapps\common\Cities Skylines II</CS2Path>
     <CS2Managed>$(CS2Path)\Cities2_Data\Managed</CS2Managed>
     <!-- 本地 Mod 目录：%USERPROFILE%\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods -->
     <CS2UserData Condition="'$(CS2UserData)' == ''">$(USERPROFILE)\AppData\LocalLow\Colossal Order\Cities Skylines II</CS2UserData>
